@@ -1,0 +1,33 @@
+/* style.css - light minimalis */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap");
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#f8f9fb;color:#1f2937;display:flex;height:100vh}
+.sidebar{width:260px;background:#ffffff;border-right:1px solid #e6e9ef;padding:22px;display:flex;flex-direction:column}
+.brand{display:flex;gap:12px;align-items:center;margin-bottom:18px}
+.logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#e6f0ff,#cfe8ff);display:flex;align-items:center;justify-content:center;font-weight:700;color:#0b3b83}
+.sidebar h2{font-size:15px;color:#0b3b83}
+.nav{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.nav a{padding:10px 12px;border-radius:10px;color:#475569;text-decoration:none;font-weight:600}
+.nav a.active{background:#eef2ff;color:#1e3a8a}
+.sidebar .small{margin-top:auto;font-size:12px;color:#94a3b8}
+
+.main{flex:1;padding:26px;overflow:auto}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+header h1{font-size:22px;color:#0b3b83}
+.header-meta{display:flex;gap:8px;align-items:center;color:#6b7280}
+
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px}
+.card{background:#fff;padding:16px;border-radius:12px;box-shadow:0 6px 18px rgba(17,24,39,0.06)}
+.card h3{font-size:15px;color:#0b3b83;margin-bottom:8px}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi{background:#fff;padding:12px;border-radius:10px;box-shadow:0 4px 12px rgba(17,24,39,0.04)}
+.kpi .label{font-size:12px;color:#64748b}
+.kpi .value{font-weight:700;font-size:18px;color:#0b3b83;margin-top:6px}
+
+.table{width:100%;border-collapse:collapse}
+.table th, .table td{padding:8px;border-bottom:1px solid #f1f5f9;text-align:left;font-size:13px}
+.controls{display:flex;gap:8px;align-items:center}
+.btn{padding:8px 12px;border-radius:8px;border:1px solid #e6e9ef;background:#fff;cursor:pointer}
+.btn.primary{background:#1e3a8a;color:#fff;border:none}
+.small-text{font-size:13px;color:#6b7280}
+@media (max-width:1000px){ .kpi-row{grid-template-columns:repeat(2,1fr)} .sidebar{display:none} }

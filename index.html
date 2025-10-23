@@ -1,0 +1,911 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Petrochemical and New Business Intelligence Dashboard — V2</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- PapaParse for CSV upload -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <!-- jsPDF + autotable for export -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
+
+  <style>
+    /* small custom styles for transitions and card shadows */
+    :root{
+      --navy: #001f3f;
+      --crimson: #b71c1c;
+      --muted: #6b7280;
+      --glass: rgba(255,255,255,0.9);
+    }
+    body { -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
+    .card-shadow { box-shadow: 0 10px 30px rgba(16,24,40,0.08); }
+    .card-shadow-2 { box-shadow: 0 6px 18px rgba(16,24,40,0.06); }
+    .fade-slide-enter { transform: translateX(12px); opacity: 0; }
+    .fade-slide-enter-active { transform: translateX(0); opacity: 1; transition: all .36s cubic-bezier(.2,.9,.2,1); }
+    .fade-slide-exit { transform: translateX(0); opacity: 1; }
+    .fade-slide-exit-active { transform: translateX(-12px); opacity: 0; transition: all .28s cubic-bezier(.2,.9,.2,1); }
+    /* better scrollbar for tables */
+    .better-scroll::-webkit-scrollbar { height:10px; width:10px; }
+    .better-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius:999px; }
+    /* small responsive */
+    @media (max-width: 1100px) {
+      .grid-main { grid-template-columns: 1fr !important; }
+      .sidebar { position: sticky; top: 10px; z-index: 20; width:100%; display:flex; gap:12px; overflow:auto; padding:12px; border-radius:12px; }
+    }
+
+    /* Additional layout fixes to keep original look but tidy */
+    .tab-btn.active { box-shadow: 0 6px 18px rgba(16,24,40,0.06); }
+    .table-small th, .table-small td { font-size:13px; padding:8px; }
+    .table-pl th, .table-pl td { font-size:13px; padding:10px 8px; border-bottom:1px solid #f1f5f9; }
+    .green { color:#16a34a; font-weight:700; }
+    .red { color:#ef4444; font-weight:700; }
+
+    /* keep revenue chart compact horizontally */
+    .horizontal-chart { height:280px !important; }
+    .compact { height:140px !important; }
+
+    /* style for action buttons row */
+    .actions-row { display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap:wrap; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+
+  <div class="app grid grid-cols-[320px_1fr] gap-8 min-h-screen p-8">
+    <!-- SIDEBAR (unchanged structure) -->
+    <aside class="sidebar bg-white rounded-2xl card-shadow p-6 flex flex-col">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-white" style="background: linear-gradient(135deg,#b71c1c,#001f3f)">P</div>
+        <div>
+          <div class="text-sm font-semibold text-[#001f3f]">PIS</div>
+          <div class="text-xs text-gray-500">Petrochemical & New Business</div>
+        </div>
+      </div>
+
+      <nav class="mt-6 flex flex-col gap-2" id="sidebarNav">
+        <button data-tab="commercial" class="tab-btn active text-left px-3 py-2 rounded-lg font-semibold text-[#001f3f] bg-gradient-to-r from-[#001f3f]/80 to-[#b71c1c]/80 text-white">Commercial</button>
+        <button data-tab="operation" class="tab-btn text-left px-3 py-2 rounded-lg font-semibold text-gray-700 hover:bg-gray-100">Operation</button>
+        <button data-tab="market" class="tab-btn text-left px-3 py-2 rounded-lg font-semibold text-gray-700 hover:bg-gray-100">Market Research</button>
+        <button data-tab="voyage" class="tab-btn text-left px-3 py-2 rounded-lg font-semibold text-gray-700 hover:bg-gray-100">Voyage Calculation</button>
+      </nav>
+
+      <div class="mt-6 text-xs text-gray-500">Upload SalesOpportunity CSV</div>
+      <input id="fileInput" type="file" accept=".csv" class="mt-2 text-sm" />
+      <div class="mt-4 text-xs text-gray-400">Last update: <span id="lastUpdate">—</span></div>
+    </aside>
+
+    <!-- MAIN PANE -->
+    <main class="pane overflow-auto">
+      <!-- header -->
+      <div class="flex items-center justify-between mb-6">
+        <div>
+          <div class="text-2xl font-bold text-[#001f3f]">Petrochemical and New Business Intelligence Dashboard</div>
+          <div class="text-sm text-gray-500">Pertamina International Shipping</div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <div class="text-sm text-gray-600">User: Antariksa R.</div>
+          <div class="px-3 py-2 rounded-lg bg-white border text-sm">Jul 2025</div>
+        </div>
+      </div>
+
+      <!-- content grid -->
+      <div class="grid grid-cols-12 gap-6 grid-main">
+        <!-- KPI top block (full width) -->
+        <section class="col-span-12 card rounded-2xl p-5 card-shadow-2">
+          <div class="flex gap-6 flex-wrap items-center">
+            <div class="flex-1 min-w-[240px] bg-gradient-to-r from-[#F6FFE7] to-[#E8FDEB] rounded-2xl p-5">
+              <div class="text-xs text-gray-600 font-semibold">Profit</div>
+              <div id="profitValue" class="text-3xl font-extrabold mt-1 text-[#001f3f]">$3.45M</div>
+              <div class="text-sm text-green-600 font-semibold mt-1">+8.2% YTD</div>
+              <div class="text-xs text-gray-400 mt-1">Periode Juli 2025</div>
+            </div>
+
+            <div class="flex gap-4 flex-1 flex-wrap">
+              <div class="min-w-[180px] bg-white rounded-xl p-4 card-shadow">
+                <div class="text-xs text-gray-500">Revenue (YTD)</div>
+                <div id="revenueValue" class="text-xl font-bold">$23.35M</div>
+                <div class="text-xs text-gray-400">YTD Jul 2025</div>
+              </div>
+              <div class="min-w-[180px] bg-white rounded-xl p-4 card-shadow">
+                <div class="text-xs text-gray-500">Cost (YTD)</div>
+                <div id="costValue" class="text-xl font-bold">$9.70M</div>
+                <div class="text-xs text-gray-400">YTD Jul 2025</div>
+              </div>
+              <div class="min-w-[180px] bg-white rounded-xl p-4 card-shadow">
+                <div class="text-xs text-gray-500">Settlement Progress (%)</div>
+                <div id="collectionValue" class="text-xl font-bold">50.57%</div>
+                <div class="text-xs text-gray-400">Outstanding $11.54M</div>
+              </div>
+              <div class="min-w-[180px] bg-white rounded-xl p-4 card-shadow">
+                <div class="text-xs text-gray-500">Outstanding (USD)</div>
+                <div id="collectionValue" class="text-xl font-bold">$11.54M</div>
+                <div class="text-xs text-gray-400">Receivables</div>
+              </div>  
+            </div>
+          </div>
+        </section>
+
+        <!-- LEFT: main sections (Commercial / Operation / Market / Voyage) -->
+        <section id="contentArea" class="col-span-7 space-y-6">
+          <!-- COMMERCIAL (default shown) -->
+          <div id="tab-commercial" class="tab-content card rounded-2xl p-5" data-tab="commercial">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-bold text-[#001f3f]">Commercial</h3>
+              <div class="flex items-center gap-2">
+                <button id="btnExportCSV" class="text-sm px-3 py-1 rounded-md border">Export Opportunities CSV</button>
+                <button id="exportPLCsv" class="text-sm px-3 py-1 rounded-md border">Export P/L CSV</button>
+                <button id="refreshCommercial" class="text-sm px-3 py-1 rounded-md bg-[#001f3f] text-white">Refresh</button>
+              </div>
+            </div>
+
+            <!-- KPI row -->
+            <div class="grid grid-cols-4 gap-4 mb-4">
+              <div class="bg-white rounded-xl p-4 card-shadow">
+                <div class="text-xs text-gray-500">Total Revenue (USD)</div>
+                <div id="kpiTotalRevenue" class="text-xl font-bold">$23,347,974</div>
+                <div class="text-xs text-gray-400">YTD</div>
+              </div>
+              <div class="bg-white rounded-xl p-4 card-shadow">
+                <div class="text-xs text-gray-500">Settlement Progress (%)</div>
+                <div id="kpiCollectionRate" class="text-xl font-bold">50.57%</div>
+                <div class="text-xs text-gray-400">Collected / Revenue</div>
+              </div>
+              <div class="bg-white rounded-xl p-4 card-shadow">
+                <div class="text-xs text-gray-500">Outstanding (USD)</div>
+                <div id="kpiOutstanding" class="text-xl font-bold">$11,542,048</div>
+                <div class="text-xs text-gray-400">Receivables</div>
+              </div>
+              <div class="bg-white rounded-xl p-4 card-shadow">
+                <div class="text-xs text-gray-500">Settlement Progress (%)</div>
+                <div id="kpiConversion" class="text-xl font-bold">36%</div>
+                <div class="text-xs text-gray-400">Awarded / Opportunities</div>
+              </div>
+            </div>
+
+            <!-- Charts grid -->
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Collected vs Outstanding -->
+              <div class="bg-white rounded-xl p-4 card-shadow">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="text-sm font-semibold text-[#001f3f]">Revenue: Collected vs Outstanding</div>
+                  <div class="text-xs text-gray-400">USD</div>
+                </div>
+                <canvas id="chartCollectedBar" class="horizontal-chart"></canvas>
+              </div>
+
+              <!-- Sales Funnel -->
+              <div class="bg-white rounded-xl p-4 card-shadow">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="text-sm font-semibold text-[#001f3f]">Sales Funnel & Breakdown</div>
+                  <div class="text-xs text-gray-400">Opportunities</div>
+                </div>
+                <div class="flex items-center gap-4">
+                  <canvas id="chartFunnelDoughnut" style="width:160px;height:140px"></canvas>
+                  <canvas id="chartFunnelBar" style="width:260px;height:140px"></canvas>
+                </div>
+                <div class="mt-3 small-text">Awarded: <span id="awardedCount">0</span> • On Progress: <span id="onprogCount">0</span> • Failed: <span id="failedCount">0</span></div>
+              </div>
+
+              <!-- New: P/L Summary compact (horizontal) -->
+              <div class="bg-white rounded-xl p-4 card-shadow col-span-2">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="text-sm font-semibold text-[#001f3f]">Profit & Loss (Summary per produk) — YTD Juli 2025</div>
+                  <div class="actions-row">
+                    <button id="exportPLPdf" class="btn text-sm px-3 py-1 border">Export P/L PDF</button>
+                    <button id="togglePLTable" class="btn text-sm px-3 py-1 border">Toggle Table</button>
+                  </div>
+                </div>
+
+                <div id="plCharts" class="grid grid-cols-2 gap-4">
+                  <div class="p-2">
+                    <canvas id="plChart" class="compact"></canvas>
+                  </div>
+                  <div class="p-2">
+                    <canvas id="revByProd" class="compact"></canvas>
+                  </div>
+                </div>
+
+                <div id="plTableWrap" class="mt-4 overflow-auto better-scroll" style="max-height:380px">
+                  <table class="min-w-full table-pl bg-white">
+                    <thead class="bg-gray-50 sticky top-0">
+                      <tr>
+                        <th class="px-3 py-2 text-left">Produk</th>
+                        <th class="px-3 py-2 text-left">RKAP 2025</th>
+                        <th class="px-3 py-2 text-left">RKAP YTD Juli 2025</th>
+                        <th class="px-3 py-2 text-left">Real YTD Juli 2025</th>
+                        <th class="px-3 py-2 text-left">Δ vs RKAP (USD)</th>
+                        <th class="px-3 py-2 text-left">Δ (%)</th>
+                        <th class="px-3 py-2 text-left">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="plTableBody" class="bg-white divide-y divide-gray-100"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Sales Opportunity Table -->
+              <div class="bg-white rounded-xl p-4 card-shadow col-span-2">
+                <div class="flex items-center justify-between mb-2">
+                  <div>
+                    <div class="text-sm font-semibold text-[#001f3f]">Sales Opportunity Table</div>
+                    <div class="text-xs text-gray-400">Dataset dapat diupload via CSV</div>
+                  </div>
+                  <div class="text-xs text-gray-500">Total: <span id="oppCount">0</span></div>
+                </div>
+
+                <div class="overflow-auto better-scroll" style="max-height:320px">
+                  <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="bg-gray-50 sticky top-0">
+                      <tr>
+                        <th class="px-3 py-2 text-left">No</th>
+                        <th class="px-3 py-2 text-left">Status</th>
+                        <th class="px-3 py-2 text-left">Vessel</th>
+                        <th class="px-3 py-2 text-left">Account</th>
+                        <th class="px-3 py-2 text-left">Cargo</th>
+                        <th class="px-3 py-2 text-left">Volume</th>
+                        <th class="px-3 py-2 text-left">Freight</th>
+                        <th class="px-3 py-2 text-left">Margin</th>
+                      </tr>
+                    </thead>
+                    <tbody id="oppTableBody" class="bg-white divide-y divide-gray-100"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="bg-white rounded-xl p-4 card-shadow col-span-2">
+                <div class="text-sm font-semibold text-[#001f3f] mb-2">AI Market Summary (auto)</div>
+                <div id="aiSummaryBox" class="text-sm text-gray-600"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- OPERATION (unchanged structure) -->
+          <div id="tab-operation" class="tab-content hidden card rounded-2xl p-5" data-tab="operation">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-bold text-[#001f3f]">Operation</h3>
+              <div class="text-sm text-gray-500">Ship, performance, issues</div>
+            </div>
+
+            <div class="grid grid-cols-4 gap-4 mb-4">
+              <div class="bg-white rounded-xl p-4 card-shadow">
+                <div class="text-xs text-gray-500">Total Vessels</div>
+                <div id="opFleetTotal" class="text-xl font-bold">10</div>
+              </div>
+              <div class="bg-white rounded-xl p-4 card-shadow">
+                <div class="text-xs text-gray-500">FSO / STS Active</div>
+                <div id="opFSO" class="text-xl font-bold">4</div>
+              </div>
+              <div class="bg-white rounded-xl p-4 card-shadow">
+                <div class="text-xs text-gray-500">Docking (this month)</div>
+                <div id="opDocking" class="text-xl font-bold">1</div>
+              </div>
+              <div class="bg-white rounded-xl p-4 card-shadow">
+                <div class="text-xs text-gray-500">HSSE Incidents</div>
+                <div id="opHSSE" class="text-xl font-bold">0</div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div class="bg-white rounded-xl p-4 card-shadow">
+                <div class="flex items-center justify-between mb-2">
+                  <div class="text-sm font-semibold text-[#001f3f]">Fleet Overview</div>
+                  <div class="text-xs text-gray-400">No. vessels</div>
+                </div>
+                <canvas id="chartFleet" style="height:220px"></canvas>
+              </div>
+
+              <div class="bg-white rounded-xl p-4 card-shadow">
+                <div class="text-sm font-semibold text-[#001f3f] mb-2">Utilization</div>
+                <div class="flex items-center gap-4">
+                  <canvas id="chartUtil" style="width:120px;height:120px"></canvas>
+                  <div>
+                    <div class="text-sm text-gray-600">Fleet Utilization</div>
+                    <div id="utilPercent" class="text-2xl font-bold">88%</div>
+                    <div class="text-xs text-gray-400">Based on deployed days</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bg-white rounded-xl p-4 card-shadow col-span-2">
+                <div class="text-sm font-semibold text-[#001f3f] mb-2">Operational Issues & Docking</div>
+                <div class="text-sm text-gray-600">
+                  <ul class="list-disc ml-5">
+                    <li><strong>Transko Aquila:</strong> BBTC renewal — On going</li>
+                    <li><strong>STS Sengeti / Sanga-Sanga:</strong> Replacement coordination — On going</li>
+                    <li><strong>Upcoming Docking:</strong> MT Kakap — 15 Jul 2025 – 9 Aug 2025</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MARKET (unchanged) -->
+          <div id="tab-market" class="tab-content hidden card rounded-2xl p-5" data-tab="market">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-bold text-[#001f3f]">Market Research</h3>
+              <div class="text-sm text-gray-500">Summaries & trends</div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div class="bg-white rounded-xl p-4 card-shadow">
+                <div class="text-sm font-semibold text-[#001f3f] mb-2">Chemical Market Snapshot</div>
+                <div id="marketSnapshot" class="text-sm text-gray-600">Chemical freight rates stable; Dry Bulk +13% MoM (sample).</div>
+              </div>
+
+              <div class="bg-white rounded-xl p-4 card-shadow">
+                <div class="text-sm font-semibold text-[#001f3f] mb-2">Freight Rate Quick Table</div>
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="text-left text-xs text-gray-500">
+                      <th class="py-2">Route</th><th class="py-2">5K</th><th class="py-2">10K</th><th class="py-2">15K</th><th class="py-2">Trend</th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-sm text-gray-700">
+                    <tr><td class="py-2">Korea–China</td><td>22</td><td>22</td><td>16</td><td>Stable</td></tr>
+                    <tr><td class="py-2">Singapore–China</td><td>36</td><td>36</td><td>29–30</td><td>Stable</td></tr>
+                    <tr><td class="py-2">AG–China</td><td>-</td><td>60–56</td><td>-</td><td>Slight ↓</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="bg-white rounded-xl p-4 card-shadow">
+                <div class="text-sm font-semibold text-[#001f3f] mb-2">Commodity Trend</div>
+                <canvas id="chartCommodity" style="height:220px"></canvas>
+              </div>
+
+              <div class="bg-white rounded-xl p-4 card-shadow">
+                <div class="text-sm font-semibold text-[#001f3f] mb-2">Opportunity Alerts</div>
+                <div id="opAlerts" class="text-sm text-gray-600">No auto-opportunities detected in current dataset. Connect monthly reports to enable alerts.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- VOYAGE (unchanged) -->
+          <div id="tab-voyage" class="tab-content hidden card rounded-2xl p-5" data-tab="voyage">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-bold text-[#001f3f]">Voyage Calculation</h3>
+              <div class="text-sm text-gray-500">Simple calculator & sample voyages</div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div class="bg-white rounded-xl p-4 card-shadow">
+                <div class="text-sm font-semibold text-[#001f3f] mb-2">Voyage Calculator</div>
+                <label class="text-xs text-gray-500">Freight Income (USD)</label>
+                <input id="voyageRevenue" type="number" class="w-full border rounded-md px-3 py-2 mt-1 mb-2"/>
+                <label class="text-xs text-gray-500">Fuel Cost (USD)</label>
+                <input id="voyageFuel" type="number" class="w-full border rounded-md px-3 py-2 mt-1 mb-2"/>
+                <label class="text-xs text-gray-500">Port & Others (USD)</label>
+                <input id="voyagePort" type="number" class="w-full border rounded-md px-3 py-2 mt-1 mb-3"/>
+                <div class="flex gap-2">
+                  <button id="calcVoyageBtn" class="px-3 py-2 bg-[#001f3f] text-white rounded-md">Calculate</button>
+                  <button id="clearVoyageBtn" class="px-3 py-2 border rounded-md">Clear</button>
+                </div>
+                <div id="voyageResult" class="mt-3 text-sm text-gray-600"></div>
+              </div>
+
+              <div class="bg-white rounded-xl p-4 card-shadow">
+                <div class="text-sm font-semibold text-[#001f3f] mb-2">Sample Voyages</div>
+                <ul class="text-sm text-gray-600 list-disc ml-5">
+                  <li>MT Kakap — Cilacap–Jakarta — Cargo 4,398 MT</li>
+                  <li>Transko Bima — Dumai–Gresik — Asphalt 6,439 MT</li>
+                  <li>FSO Abherka — Poleng — Crude 13,511 KL</li>
+                </ul>
+              </div>
+
+              <div class="bg-white rounded-xl p-4 card-shadow col-span-2">
+                <div class="text-sm font-semibold text-[#001f3f] mb-2">Voyage KPI & Notes</div>
+                <div class="text-sm text-gray-600">Voyage Profit = Freight Income − Voyage Cost. Fuel Efficiency = Cargo Volume / Fuel Used. Integrate COA/Cost data for full automation.</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- RIGHT column: charts & small cards (kecepatan dan ukuran sedikit diperkecil) -->
+        <aside class="col-span-5 flex flex-col gap-6">
+          <div class="bg-white rounded-xl p-4 card-shadow">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-xs text-gray-500">Total Revenue</div>
+                <div id="sideRevenue" class="text-2xl font-bold">$23.35M</div>
+              </div>
+              <div>
+                <div class="text-xs text-gray-500">Collection Rate</div>
+                <div id="sideCollection" class="text-2xl font-bold">50.57%</div>
+              </div>
+            </div>
+            <div class="mt-3">
+              <canvas id="sideSpark" style="height:72px"></canvas>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl p-4 card-shadow">
+            <div class="flex items-center justify-between mb-2">
+              <div class="text-sm font-semibold text-[#001f3f]">Revenue Trend</div>
+              <div class="text-xs text-gray-400">Monthly</div>
+            </div>
+            <canvas id="chartRevenueTrend" style="height:140px"></canvas>
+          </div>
+
+          <div class="bg-white rounded-xl p-4 card-shadow">
+            <div class="text-sm font-semibold text-[#001f3f] mb-2">Operational Snapshot</div>
+            <div class="flex gap-2 flex-wrap">
+              <div class="px-3 py-2 bg-gray-100 rounded-full text-sm">4 Owned/TC</div>
+              <div class="px-3 py-2 bg-gray-100 rounded-full text-sm">2 Spot/COA</div>
+              <div class="px-3 py-2 bg-gray-100 rounded-full text-sm">4 FSO/STS</div>
+              <div class="px-3 py-2 bg-gray-100 rounded-full text-sm">Docking: MT Kakap (15 Jul–9 Aug)</div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl p-4 card-shadow">
+            <div class="text-sm font-semibold text-[#001f3f] mb-2">AI Insights</div>
+            <ul id="aiInsights" class="text-sm text-gray-600 list-disc ml-5">
+              <li>Collection rate turun vs 2024 (2024: 94.66%). Fokus penagihan ke COA Domestik, PX, Caustic Soda.</li>
+              <li>Top revenue drivers: COA Domestik, FOB LBO, FSO Abherka.</li>
+              <li>Operasional: semua vessel tanpa incident, HSSE 100%.</li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <!-- SCRIPTS: memasukkan semua data P/L yang kamu kirim + visual -->
+  <script>
+  // ---------- Data (dimasukkan lengkap sesuai request)
+  // P/L per segment (data dari user message)
+  const plData = [
+    { produk: "Asphalt", RKAP2025: 4.62, RKAP_YTD_Juli: 2.56, Real_YTD_Juli: 3.33, Delta_USD: 0.77, DeltaPct: 30, status: "🟢" },
+    { produk: "FAME", RKAP2025: 2.59, RKAP_YTD_Juli: 2.43, Real_YTD_Juli: 2.44, Delta_USD: 0.01, DeltaPct: 1, status: "🟢" },
+    { produk: "FSO", RKAP2025: 9.18, RKAP_YTD_Juli: 5.33, Real_YTD_Juli: 5.34, Delta_USD: 0.01, DeltaPct: 0.1, status: "🟢" },
+    { produk: "LBO", RKAP2025: 10.99, RKAP_YTD_Juli: 6.36, Real_YTD_Juli: 4.43, Delta_USD: -1.93, DeltaPct: -30, status: "🔴" },
+    { produk: "Methanol", RKAP2025: 1.93, RKAP_YTD_Juli: 1.13, Real_YTD_Juli: 0.00, Delta_USD: -1.13, DeltaPct: -100, status: "🔴" },
+    { produk: "Other", RKAP2025: 1.56, RKAP_YTD_Juli: 0.26, Real_YTD_Juli: 2.98, Delta_USD: 2.71, DeltaPct: 83, status: "🟢" },
+    { produk: "Paraxylene", RKAP2025: 2.82, RKAP_YTD_Juli: 1.65, Real_YTD_Juli: 3.05, Delta_USD: 1.40, DeltaPct: 83, status: "🟢" },
+    { produk: "Solvent", RKAP2025: 0.28, RKAP_YTD_Juli: 0.14, Real_YTD_Juli: 0.20, Delta_USD: 0.06, DeltaPct: 42, status: "🟢" },
+    { produk: "Caustic Soda", RKAP2025: 3.07, RKAP_YTD_Juli: 1.15, Real_YTD_Juli: 1.63, Delta_USD: 0.48, DeltaPct: 42, status: "🟢" },
+    { produk: "Dry Bulk", RKAP2025: 8.68, RKAP_YTD_Juli: 4.36, Real_YTD_Juli: 0.64, Delta_USD: -3.71, DeltaPct: -85, status: "🔴" },
+    { produk: "Asam Sulfat - Asam Fosfat", RKAP2025: 0.42, RKAP_YTD_Juli: 0.21, Real_YTD_Juli: 0.00, Delta_USD: -0.21, DeltaPct: -100, status: "🔴" }
+  ];
+
+  // Volume data (juta KL)
+  const volumeData = [
+    { produk:"Asphalt", target:0.05, real:0.05, pct:6.7 },
+    { produk:"LBO", target:0.320, real:0.240, pct:-25.0 },
+    { produk:"FAME", target:0.61, real:1.36, pct:122.8 },
+    { produk:"Methanol", target:0.04, real:0.00, pct:-100.0 },
+    { produk:"Paraxylene", target:0.13, real:0.24, pct:84.6 },
+    { produk:"Solvent", target:0.002, real:0.003, pct:50.0 },
+    { produk:"Dry Bulk", target:0.390, real:0.070, pct:-82.1 },
+    { produk:"Caustic Soda", target:0.03, real:0.04, pct:33.3 },
+    { produk:"Others", target:0.01, real:0.09, pct:542.9 }
+  ];
+
+  // PnB top-level KPIs (kept from prior)
+  const initialPnB = {
+    TotalRevenue: 45960000, // RKAP 2025 in USD thousands? using 45.96 juta USD = 45.96M
+    Collected: 23347974.36, // earlier sample
+    Outstanding: 11542048.50,
+    CollectionRate: 50.57,
+    ConversionRate: 36,
+    TotalOpportunities: 50,
+    Awarded: 18,
+    Failed: 27,
+    OnProgress: 5
+  };
+
+  let SalesOpportunityData = [
+    {No:1, Status:'Awarded', Vessel:'MT TBN Small II', Account:'PT KPI', Cargo:'Paraxylene', Volume:'5,000 MT / shipment', Freight:'23.5 USD/MT', Margin:'9.3%'},
+    {No:2, Status:'Awarded', Vessel:'MT Griya Bugis', Account:'PT PL', Cargo:'LBO', Volume:'1,900 MT', Freight:'IDR 1,701,000,000', Margin:''},
+    {No:3, Status:'Failed', Vessel:'PIS Mahakam', Account:'PT HTK', Cargo:'Methanol', Volume:'', Freight:'', Margin:''},
+    {No:21, Status:'Awarded', Vessel:'MT Transko Bima', Account:'PT PPN', Cargo:'Asphalt', Volume:'3,800 MT', Freight:'127,000 USD', Margin:'7.31%'}
+  ];
+
+  let PnB = { ...initialPnB };
+
+  // ---------- Helpers (kept names from original)
+  const $ = id => document.getElementById(id);
+  const fmtUSD = n => {
+    if (n === null || n === undefined) return '-';
+    const x = Number(n);
+    if (isNaN(x)) return n;
+    if (Math.abs(x) >= 1000000) return '$' + (x/1000000).toFixed(2) + 'M';
+    return '$' + x.toLocaleString('en-US');
+  };
+
+  // ---------- Render Top KPIs (kept same)
+  function renderTopKPIs(){
+    $('kpiTotalRevenue').innerText = fmtUSD(PnB.TotalRevenue);
+    $('kpiCollectionRate').innerText = (PnB.CollectionRate ?? 0).toFixed(2) + '%';
+    $('kpiOutstanding').innerText = fmtUSD(PnB.Outstanding);
+    $('kpiConversion').innerText = (PnB.ConversionRate ?? 0) + '%';
+    $('revenueValue').innerText = fmtUSD(PnB.TotalRevenue);
+    $('collectionValue').innerText = (PnB.CollectionRate ?? 0) + '%';
+    $('sideRevenue').innerText = fmtUSD(PnB.TotalRevenue);
+    $('sideCollection').innerText = (PnB.CollectionRate ?? 0) + '%';
+    $('profitValue').innerText = fmtUSD((PnB.TotalRevenue - 9700000)); // sample profit calc
+    $('lastUpdate').innerText = new Date().toLocaleString();
+  }
+
+  // ---------- Render Opportunity Table
+  function renderOpportunityTable(){
+    const tbody = $('oppTableBody');
+    tbody.innerHTML = '';
+    SalesOpportunityData.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="px-3 py-2">${row.No ?? ''}</td>
+        <td class="px-3 py-2">${row.Status ?? ''}</td>
+        <td class="px-3 py-2 font-semibold">${row.Vessel ?? ''}</td>
+        <td class="px-3 py-2">${row.Account ?? ''}</td>
+        <td class="px-3 py-2">${row.Cargo ?? ''}</td>
+        <td class="px-3 py-2">${row.Volume ?? ''}</td>
+        <td class="px-3 py-2">${row.Freight ?? row.FreightRate ?? ''}</td>
+        <td class="px-3 py-2">${row.Margin ?? ''}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+    $('oppCount').innerText = SalesOpportunityData.length;
+
+    // funnel counts
+    const awarded = SalesOpportunityData.filter(x=>String(x.Status).toLowerCase()==='awarded').length;
+    const failed = SalesOpportunityData.filter(x=>String(x.Status).toLowerCase()==='failed').length;
+    const onprog = SalesOpportunityData.length - awarded - failed;
+    $('awardedCount').innerText = awarded;
+    $('failedCount').innerText = failed;
+    $('onprogCount').innerText = onprog;
+  }
+
+  // ---------- P/L Table render
+  function renderPLTable(){
+    const tbody = $('plTableBody');
+    tbody.innerHTML = '';
+    plData.forEach(r=>{
+      const tr = document.createElement('tr');
+      const deltaClass = (r.DeltaPct >= 0) ? 'green' : 'red';
+      tr.innerHTML = `
+        <td class="px-3 py-2">${r.produk}</td>
+        <td class="px-3 py-2">${r.RKAP2025.toFixed(2)}</td>
+        <td class="px-3 py-2">${r.RKAP_YTD_Juli.toFixed(2)}</td>
+        <td class="px-3 py-2">${r.Real_YTD_Juli.toFixed(2)}</td>
+        <td class="px-3 py-2">${r.Delta_USD.toFixed(2)}</td>
+        <td class="px-3 py-2 ${deltaClass}">${r.DeltaPct}%</td>
+        <td class="px-3 py-2">${r.status}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ---------- Charts (Chart.js)
+  const charts = {};
+  function initCharts(){
+    // Collected vs Outstanding (horizontal stacked bar)
+    const ctxCol = document.getElementById('chartCollectedBar').getContext('2d');
+    charts.collectedBar = new Chart(ctxCol, {
+      type: 'bar',
+      data: {
+        labels: ['PnB'],
+        datasets: [
+          { label:'Collected', data: [PnB.Collected], backgroundColor:'#43cea2', borderRadius:6 },
+          { label:'Outstanding', data: [PnB.Outstanding], backgroundColor:'#185a9d', borderRadius:6 }
+        ]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive:true,
+        maintainAspectRatio:false,
+        plugins:{ legend:{ position:'bottom' } },
+        scales: {
+          x: { ticks:{ callback: v => '$' + (v/1000000).toFixed(1) + 'M' }, stacked: true, grid:{ color:'#f1f5f9' } },
+          y: { stacked: true }
+        }
+      }
+    });
+
+    // Funnel doughnut
+    const ctxDough = document.getElementById('chartFunnelDoughnut').getContext('2d');
+    charts.funnelDough = new Chart(ctxDough, {
+      type: 'doughnut',
+      data: { labels:['Awarded','Failed','On Progress'], datasets:[{ data:[PnB.Awarded, PnB.Failed, PnB.OnProgress], backgroundColor:['#4ade80','#ef4444','#facc15'] }] },
+      options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } }
+    });
+
+    // Funnel horizontal bar
+    const ctxFBar = document.getElementById('chartFunnelBar').getContext('2d');
+    charts.funnelBar = new Chart(ctxFBar, {
+      type: 'bar',
+      data: { labels:['Awarded','On Progress','Failed'], datasets:[{ data:[PnB.Awarded,PnB.OnProgress,PnB.Failed], backgroundColor:['#4ade80','#facc15','#ef4444'], borderRadius:8 }] },
+      options: { indexAxis:'y', plugins:{ legend:{ display:false } }, maintainAspectRatio:false, scales:{ x:{ display:false }, y:{ grid:{ display:false } } } }
+    });
+
+    // P/L chart (bar showing Real vs RKAP YTD)
+    const ctxPL = document.getElementById('plChart').getContext('2d');
+    const labelsPL = plData.map(x => x.produk);
+    charts.plChart = new Chart(ctxPL, {
+      type:'bar',
+      data:{
+        labels: labelsPL,
+        datasets:[
+          { label:'RKAP YTD Juli', data: plData.map(x=>x.RKAP_YTD_Juli), backgroundColor:'#93c5fd' },
+          { label:'Real YTD Juli', data: plData.map(x=>x.Real_YTD_Juli), backgroundColor:'#60a5fa' }
+        ]
+      },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } }, scales:{ y:{ beginAtZero:true } } }
+    });
+
+    // Revenue by product (pie)
+    const ctxRevByProd = document.getElementById('revByProd').getContext('2d');
+    charts.revByProd = new Chart(ctxRevByProd, {
+      type:'pie',
+      data:{
+        labels: labelsPL,
+        datasets:[{ data: plData.map(x => x.Real_YTD_Juli), backgroundColor: [
+          '#60a5fa','#34d399','#f59e0b','#fb7185','#a78bfa','#60a5fa','#f97316','#4ade80','#e11d48','#60a5fa','#7c3aed'
+        ] }]
+      },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right' } } }
+    });
+
+    // Commodity multi-line
+    const ctxCom = document.getElementById('chartCommodity').getContext('2d');
+    charts.commodity = new Chart(ctxCom, {
+      type:'line',
+      data: {
+        labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul'],
+        datasets: [
+          { label:'Paraxylene (USD/MT)', data:[60,58,59,61,60,62,61], borderColor:'#60a5fa', tension:0.3, fill:false },
+          { label:'Methanol (USD/MT)', data:[150,149,148,151,153,152,151], borderColor:'#34d399', tension:0.3, fill:false },
+          { label:'Asphalt (USD/MT)', data:[40,42,41,43,45,44,45], borderColor:'#f59e0b', tension:0.3, fill:false }
+        ]
+      },
+      options: { plugins:{ legend:{ labels:{ usePointStyle:true } } }, scales:{ y:{ grid:{ color:'#f1f5f9' } } } }
+    });
+
+    // side sparkline
+    const ctxSpark = document.getElementById('sideSpark').getContext('2d');
+    charts.spark = new Chart(ctxSpark, {
+      type:'line',
+      data: { labels:['Jan','Feb','Mar','Apr','May','Jun','Jul'], datasets:[{ data:[2.8,3.2,3.4,3.7,4.0,4.3,4.66].map(x=>x*1000000), borderColor:'#b71c1c', tension:0.3, pointRadius:0, fill:true, backgroundColor:'rgba(183,28,28,0.06)'}] },
+      options:{ plugins:{ legend:{display:false} }, scales:{ x:{ display:false }, y:{ display:false } }, maintainAspectRatio:false }
+    });
+
+    // revenue trend (compact)
+    const ctxRev = document.getElementById('chartRevenueTrend').getContext('2d');
+    charts.revenueTrend = new Chart(ctxRev, {
+      type:'line',
+      data: { labels:['Jan','Feb','Mar','Apr','May','Jun','Jul'], datasets:[{ label:'Revenue', data:[2800000,3200000,3400000,3700000,4000000,4300000,4660000], borderColor:'#b71c1c', backgroundColor:'rgba(183,28,28,0.06)', fill:true, tension:0.36 }] },
+      options:{ plugins:{ legend:{display:false} }, scales:{ y:{ ticks:{ callback: v => '$' + (v/1000000).toFixed(1) + 'M' } }} }
+    });
+
+    // fleet & util (unchanged)
+    const ctxFleet = document.getElementById('chartFleet').getContext('2d');
+    charts.fleet = new Chart(ctxFleet, {
+      type: 'bar',
+      data: { labels:['Owned/TC','Spot/COA','FSO/STS'], datasets:[{ data:[4,2,4], backgroundColor:['#43cea2','#f59e0b','#60a5fa'], borderRadius:8 }] },
+      options: { plugins:{ legend:{display:false} }, scales:{ y:{ beginAtZero:true, grid:{ color:'#f1f5f9' } } } }
+    });
+
+    const ctxUtil = document.getElementById('chartUtil').getContext('2d');
+    const utilPercent = 88;
+    charts.util = new Chart(ctxUtil, {
+      type:'doughnut',
+      data: { labels:['Utilized','Idle'], datasets:[{ data:[utilPercent,100-utilPercent], backgroundColor:['#43cea2','#e6eef5'] }] },
+      options: { cutout:'70%', plugins:{ legend:{display:false} }, maintainAspectRatio:false }
+    });
+
+    // initial funnel counts -> reflect dataset
+    updateFunnelCounts();
+  }
+
+  function updateFunnelCounts(){
+    const awarded = SalesOpportunityData.filter(x=>String(x.Status).toLowerCase()==='awarded').length;
+    const failed = SalesOpportunityData.filter(x=>String(x.Status).toLowerCase()==='failed').length;
+    const onprog = SalesOpportunityData.length - awarded - failed;
+    if(charts.funnelDough){
+      charts.funnelDough.data.datasets[0].data = [awarded, failed, onprog];
+      charts.funnelDough.update();
+    }
+    if(charts.funnelBar){
+      charts.funnelBar.data.datasets[0].data = [awarded, onprog, failed];
+      charts.funnelBar.update();
+    }
+    $('awardedCount').innerText = awarded;
+    $('failedCount').innerText = failed;
+    $('onprogCount').innerText = onprog;
+  }
+
+  // ---------- CSV Upload handling (kept pattern)
+  document.getElementById('fileInput').addEventListener('change', (e) => {
+    const f = e.target.files[0];
+    if(!f) return;
+    Papa.parse(f, { header:true, skipEmptyLines:true, complete: results => {
+      const rows = results.data.map((r, i) => ({
+        No: r.No || i+1,
+        Status: r.Status || '',
+        Vessel: r.Vessel || '',
+        Account: r.Account || '',
+        Cargo: r.Cargo || '',
+        Volume: r.Volume || '',
+        Freight: r.FreightRate || r.Freight || '',
+        Margin: r.Margin || ''
+      }));
+      SalesOpportunityData = rows;
+      // recalc counts
+      recalcFromOppData();
+      renderOpportunityTable();
+      updateFunnelCounts();
+      renderTopKPIs();
+      generateAISummary();
+      alert('CSV uploaded. Dashboard updated.');
+    }});
+  });
+
+  // ---------- recalc summary from SalesOpportunityData
+  function recalcFromOppData(){
+    const counts = { total:0, Awarded:0, Failed:0, OnProgress:0 };
+    SalesOpportunityData.forEach(r=>{
+      counts.total++;
+      const s = (r.Status || '').trim();
+      if(s.toLowerCase() === 'awarded') counts.Awarded++;
+      else if(s.toLowerCase() === 'failed') counts.Failed++;
+      else if(s.toLowerCase().includes('progress') || s.toLowerCase().includes('on')) counts.OnProgress++;
+    });
+    PnB.TotalOpportunities = counts.total;
+    PnB.Awarded = counts.Awarded;
+    PnB.Failed = counts.Failed;
+    PnB.OnProgress = counts.OnProgress;
+    PnB.ConversionRate = counts.total ? Math.round((counts.Awarded / counts.total) * 100) : 0;
+  }
+
+  // ---------- Export P/L CSV & PDF
+  document.getElementById('exportPLCsv').addEventListener('click', ()=>{
+    const csv = Papa.unparse(plData.map(r=>({
+      Produk: r.produk, RKAP2025: r.RKAP2025, RKAP_YTD_Juli: r.RKAP_YTD_Juli, Real_YTD_Juli: r.Real_YTD_Juli, Delta_USD: r.Delta_USD, DeltaPct: r.DeltaPct, Status: r.status
+    })));
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'PL_Data_Juli2025.csv'; a.click(); URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('exportPLPdf').addEventListener('click', ()=>{
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit:'pt', format:'a4' });
+    doc.setFontSize(14);
+    doc.text('P&L Segment Petrochemical & New Business — YTD Juli 2025', 40, 40);
+    const cols = ['Produk','RKAP 2025','RKAP YTD Juli','Real YTD Juli','Δ USD','Δ %','Status'];
+    const rows = plData.map(r => [r.produk, r.RKAP2025, r.RKAP_YTD_Juli, r.Real_YTD_Juli, r.Delta_USD, r.DeltaPct + '%', r.status]);
+    doc.autoTable({ head:[cols], body: rows, startY: 60, styles:{ fontSize:9 } });
+    doc.save('PL_Juli2025.pdf');
+  });
+
+  // ---------- Export Opportunities CSV (existing)
+  document.getElementById('btnExportCSV').addEventListener('click', () => {
+    if(!SalesOpportunityData.length){ alert('No data to export'); return; }
+    const csv = Papa.unparse(SalesOpportunityData);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'SalesOpportunityData.csv'; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // ---------- Toggle PL table
+  document.getElementById('togglePLTable').addEventListener('click', ()=>{
+    const w = $('plTableWrap');
+    if(w.style.display === 'none'){ w.style.display = 'block'; } else { w.style.display = 'none'; }
+  });
+
+  // ---------- Voyage calculator (unchanged)
+  $('calcVoyageBtn').addEventListener('click', () => {
+    const rev = Number($('voyageRevenue').value) || 0;
+    const fuel = Number($('voyageFuel').value) || 0;
+    const port = Number($('voyagePort').value) || 0;
+    const totalCost = fuel + port;
+    const profit = rev - totalCost;
+    const margin = rev ? ((profit / rev) * 100).toFixed(2) : '0.00';
+    $('voyageResult').innerText = `Total Cost: ${fmtUSD(totalCost)} • Profit: ${fmtUSD(profit)} • Margin: ${margin}%`;
+  });
+  $('clearVoyageBtn').addEventListener('click', () => {
+    $('voyageRevenue').value=''; $('voyageFuel').value=''; $('voyagePort').value=''; $('voyageResult').innerText='';
+  });
+
+  // ---------- Tab switching (kept)
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'bg-gradient-to-r', 'from-[#001f3f]/80', 'to-[#b71c1c]/80', 'text-white'));
+      btn.classList.add('active', 'bg-gradient-to-r', 'from-[#001f3f]/80', 'to-[#b71c1c]/80', 'text-white');
+      const tab = btn.getAttribute('data-tab') || btn.dataset.tab;
+      document.querySelectorAll('.tab-content').forEach(tc => {
+        if(tc.dataset.tab === tab){
+          tc.classList.remove('hidden');
+          tc.style.display = 'block';
+          // animate
+          tc.style.opacity = 0;
+          tc.style.transform = 'translateX(8px)';
+          setTimeout(()=> { tc.style.opacity = 1; tc.style.transform = 'translateX(0)'; }, 10);
+        } else {
+          tc.classList.add('hidden');
+          tc.style.display = 'none';
+        }
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  function handleRealtimeMessage(msg){
+    if(!msg || !msg.type) return;
+    const p = msg.payload || {};
+    if(msg.type === 'kpi'){
+      ['TotalRevenue','Collected','Outstanding','CollectionRate','ConversionRate'].forEach(k => {
+        if(p[k] !== undefined) PnB[k] = p[k];
+      });
+      renderTopKPIs();
+    } else if(msg.type === 'opportunity'){
+      SalesOpportunityData.push(p);
+      recalcFromOppData();
+      renderOpportunityTable();
+      updateFunnelCounts();
+    } else if(msg.type === 'opportunity_bulk'){
+      if(Array.isArray(p)) SalesOpportunityData = p;
+      recalcFromOppData();
+      renderOpportunityTable();
+      updateFunnelCounts();
+    } else if(msg.type === 'market'){
+      if(p.summary) $('marketSnapshot').innerText = p.summary;
+    } else if(msg.type === 'voyage'){
+      $('voyageResult').innerText = 'Voyage update: ' + JSON.stringify(p);
+    }
+  }
+
+  // ---------- AI summary generator (simple)
+  function generateAISummary(){
+    const el = $('aiSummaryBox');
+    let s = `<strong>As of ${new Date().toLocaleString()}</strong>`;
+    s += `<p class="mt-2 text-sm text-gray-600">Total revenue (RKAP 2025): <strong>${fmtUSD(initialPnB.TotalRevenue)}</strong>. Collection rate: <strong>${initialPnB.CollectionRate}%</strong>.</p>`;
+    s += `<p class="mt-2 text-sm text-gray-600">Action: Fokus penagihan pada Paraxylene & Caustic Soda; evaluasi cost pada FAME & LBO; review Dry Bulk & Methanol exposure.</p>`;
+    el.innerHTML = s;
+  }
+
+  // ---------- Init on load
+  window.addEventListener('DOMContentLoaded', () => {
+    renderTopKPIs();
+    renderOpportunityTable();
+    renderPLTable();
+    generateAISummary();
+    initCharts();
+    recalcFromOppData();
+    updateFunnelCounts();
+  });
+
+  // ---------- Misc UI events
+  document.getElementById('refreshCommercial').addEventListener('click', () => {
+    recalcFromOppData();
+    renderOpportunityTable();
+    renderPLTable();
+    updateFunnelCounts();
+    generateAISummary();
+    alert('Commercial data refreshed.');
+  });
+
+  // Export Opportunities to PDF (button not originally requested but handy)
+  document.getElementById('btnExportCSV').addEventListener('dblclick', ()=>{
+    // dblclick for PDF (avoid accidental)
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit:'pt', format:'a4' });
+      doc.setFontSize(14);
+      doc.text('Sales Opportunities - PNB', 40, 40);
+      const cols = ['No','Status','Vessel','Account','Cargo','Volume','Freight','Margin'];
+      const rows = SalesOpportunityData.map(r => [r.No, r.Status, r.Vessel, r.Account, r.Cargo, r.Volume, r.Freight || r.FreightRate || '', r.Margin || '']);
+      doc.autoTable({ head:[cols], body: rows, startY:60, styles:{ fontSize:9 } });
+      doc.save('opportunities.pdf');
+    } catch(e){ console.warn('PDF export error', e); alert('PDF export failed'); }
+  });
+
+  </script>
+</body>
+</html>
