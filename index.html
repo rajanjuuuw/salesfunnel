@@ -363,7 +363,7 @@
           Research</button>
       </nav>
       <input id="fileInput" type="file" accept=".csv" class="mt-4 text-sm" />
-      <div class="mt-4 text-xs text-gray-400">Last update: <span id="lastUpdate">27 Oct 2025</span></div>
+      <div class="mt-4 text-xs text-gray-400">Last update: <span id="lastUpdate">28 Oct 2025</span></div>
     </aside>
 
     <main class="pane overflow-auto">
@@ -1408,23 +1408,26 @@
             </div>
           </div>
 
-          <!-- TAB MARKET -->
-          <div id="tab-market" class="tab-content hidden card rounded-2xl p-5 bg-white" data-tab="market">
-            <h3 class="text-lg font-bold text-[#001f3f]">Market Research</h3>
-            <p class="text-sm text-gray-600 mt-2 mb-4">Input and manage latest market data and analysis below.</p>
+          <!-- 🌐 TAB MARKET (Modern Gen-Z Style) -->
+          <div id="tab-market"
+            class="tab-content hidden rounded-2xl bg-white/60 backdrop-blur-xl border border-gray-200 p-6 shadow-lg transition-all duration-300 hover:shadow-2xl"
+            data-tab="market">
+            <h3 class="text-2xl font-bold text-[#001f3f] tracking-tight">Market Research</h3>
+            <p class="text-sm text-gray-600 mt-2 mb-6">Input and manage latest market data and analysis below.</p>
 
-            <!-- FORM INPUT DATA -->
-            <div class="space-y-3 border border-gray-200 rounded-xl p-4 mb-5">
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- 🧾 FORM INPUT -->
+            <div
+              class="space-y-4 border border-gray-200 rounded-2xl p-6 bg-white/80 shadow-sm hover:shadow-md transition">
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
                 <!-- Business Stream -->
                 <div>
-                  <label class="block text-sm font-semibold text-[#001f3f] mb-1">Business Stream</label>
+                  <label class="block text-sm font-semibold text-[#001f3f] mb-2">Business Stream</label>
                   <select id="businessStream"
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#001f3f] focus:outline-none">
+                    class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#001f3f] focus:outline-none">
                     <option value="">Select Stream</option>
                     <option value="Chemical Market">Chemical Market</option>
-                    <option value="Dry Bulk Market: Average Bulkcarrier Earnings ($, 000’s/day)">Dry Bulk Market:
-                      Average Bulkcarrier Earnings ($, 000’s/day)</option>
+                    <option value="Dry Bulk Market: Average Bulkcarrier Earnings ($,000’s/day)">Dry Bulk Market: Average
+                      Bulkcarrier Earnings ($,000’s/day)</option>
                     <option value="Dry Bulk Market: Bulkcarrier Timecharter Rates ($,000’s/day) & Asset Markets">Dry
                       Bulk Market: Bulkcarrier Timecharter Rates ($,000’s/day) & Asset Markets</option>
                   </select>
@@ -1432,61 +1435,63 @@
 
                 <!-- Source -->
                 <div>
-                  <label class="block text-sm font-semibold text-[#001f3f] mb-1">Source</label>
+                  <label class="block text-sm font-semibold text-[#001f3f] mb-2">Source</label>
                   <input id="sourceInput" type="text" placeholder="Enter source or link"
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#001f3f] focus:outline-none" />
+                    class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#001f3f] focus:outline-none placeholder-gray-400" />
                 </div>
 
                 <!-- Market Analysis -->
                 <div>
-                  <label class="block text-sm font-semibold text-[#001f3f] mb-1">Market Analysis</label>
+                  <label class="block text-sm font-semibold text-[#001f3f] mb-2">Market Analysis</label>
                   <textarea id="marketAnalysis" rows="1" placeholder="Write market analysis..."
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#001f3f] focus:outline-none"></textarea>
+                    class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#001f3f] focus:outline-none placeholder-gray-400"></textarea>
                 </div>
 
-                <!-- Update (Date) -->
+                <!-- Update Date -->
                 <div>
-                  <label class="block text-sm font-semibold text-[#001f3f] mb-1">Update (Date)</label>
+                  <label class="block text-sm font-semibold text-[#001f3f] mb-2">Update (Date)</label>
                   <input id="updateDate" type="date"
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#001f3f] focus:outline-none" />
+                    class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#001f3f] focus:outline-none" />
                 </div>
               </div>
 
               <!-- Action Buttons -->
-              <div class="flex items-center justify-between mt-4">
+              <div class="flex items-center justify-between pt-3">
                 <div class="flex gap-3">
                   <button id="addDataBtn"
-                    class="bg-[#001f3f] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#003366] transition">+
+                    class="bg-gradient-to-r from-[#001f3f] to-[#b71c1c] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:opacity-90 transition transform hover:scale-105">+
                     Add</button>
+
                   <label for="uploadImage"
-                    class="cursor-pointer bg-gray-100 text-[#001f3f] px-4 py-2 rounded-lg text-sm hover:bg-gray-200 transition">Upload
+                    class="cursor-pointer bg-gray-100 text-[#001f3f] px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-200 transition">Upload
                     Image</label>
                   <input id="uploadImage" type="file" accept="image/*" class="hidden" />
                 </div>
               </div>
             </div>
 
-            <!-- TABLE DATA -->
-            <div class="overflow-x-auto mt-5">
-              <table class="min-w-full text-sm text-left border border-gray-200 rounded-xl">
-                <thead class="bg-[#001f3f] text-white">
+            <!-- 📊 TABLE DATA -->
+            <div class="overflow-x-auto mt-8">
+              <table class="min-w-full text-sm text-left border border-gray-200 rounded-2xl overflow-hidden">
+                <thead class="bg-gradient-to-r from-[#001f3f] to-[#b71c1c] text-white text-[15px]">
                   <tr>
-                    <th class="px-4 py-2 rounded-tl-xl">Business Stream</th>
-                    <th class="px-4 py-2">Source</th>
-                    <th class="px-4 py-2">Market Analysis</th>
-                    <th class="px-4 py-2">Update (Date)</th>
-                    <th class="px-4 py-2 rounded-tr-xl">Image</th>
+                    <th class="px-6 py-3">Business Stream</th>
+                    <th class="px-6 py-3">Source</th>
+                    <th class="px-6 py-3">Market Analysis</th>
+                    <th class="px-6 py-3">Update (Date)</th>
+                    <th class="px-6 py-3">Image</th>
                   </tr>
                 </thead>
-                <tbody id="marketTableBody" class="text-gray-700">
+                <tbody id="marketTableBody" class="text-gray-700 bg-white/80">
                   <tr class="text-center">
-                    <td colspan="5" class="py-3 text-gray-400 italic">No data added yet.</td>
+                    <td colspan="5" class="py-5 text-gray-400 italic">No data added yet.</td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
 
+          <!-- ⚙️ SCRIPT -->
           <script>
             const addDataBtn = document.getElementById("addDataBtn");
             const marketTableBody = document.getElementById("marketTableBody");
@@ -1512,28 +1517,29 @@
               const updateDate = document.getElementById("updateDate").value;
 
               if (!businessStream || !sourceInput || !marketAnalysis || !updateDate) {
-                alert("Please fill in all fields before adding data.");
+                alert("⚠️ Please fill in all fields before adding data.");
                 return;
               }
 
               const newRow = document.createElement("tr");
-              newRow.classList.add("border-t", "border-gray-200");
+              newRow.classList.add("border-t", "border-gray-200", "hover:bg-gray-50", "transition");
+
               newRow.innerHTML = `
-      <td class="px-4 py-2">${businessStream}</td>
-      <td class="px-4 py-2"><a href="${sourceInput}" target="_blank" class="text-blue-600 underline">${sourceInput}</a></td>
-      <td class="px-4 py-2">${marketAnalysis}</td>
-      <td class="px-4 py-2">${updateDate}</td>
-      <td class="px-4 py-2">${uploadedImage ? `<img src="${uploadedImage}" alt="Uploaded" class="h-12 w-12 object-cover rounded-lg border border-gray-300" />` : "-"}</td>
+      <td class="px-6 py-3 font-medium">${businessStream}</td>
+      <td class="px-6 py-3"><a href="${sourceInput}" target="_blank" class="text-blue-600 underline">${sourceInput}</a></td>
+      <td class="px-6 py-3">${marketAnalysis}</td>
+      <td class="px-6 py-3">${updateDate}</td>
+      <td class="px-6 py-3">${uploadedImage ? `<img src="${uploadedImage}" alt="Uploaded" class="h-28 w-28 object-cover rounded-xl border border-gray-300 shadow-sm hover:scale-105 transition-transform" />` : "-"}</td>
     `;
 
-              // Hapus placeholder row jika ada
+              // Hapus placeholder row
               if (marketTableBody.querySelector("td[colspan='5']")) {
                 marketTableBody.innerHTML = "";
               }
 
               marketTableBody.appendChild(newRow);
 
-              // Reset form setelah tambah
+              // Reset form
               document.getElementById("businessStream").value = "";
               document.getElementById("sourceInput").value = "";
               document.getElementById("marketAnalysis").value = "";
@@ -1542,6 +1548,7 @@
               uploadedImage = null;
             });
           </script>
+
 
 
           <script>
