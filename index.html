@@ -1,911 +1,2133 @@
 <!doctype html>
 <html lang="id">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Petrochemical and New Business Intelligence Dashboard — V2</title>
-
-  <!-- Tailwind CDN -->
+  <title>Petrochemical & New Business Intelligence Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- PapaParse for CSV upload -->
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <!-- jsPDF + autotable for export -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
-
   <style>
-    /* small custom styles for transitions and card shadows */
-    :root{
+    :root {
       --navy: #001f3f;
       --crimson: #b71c1c;
-      --muted: #6b7280;
-      --glass: rgba(255,255,255,0.9);
     }
-    body { -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
-    .card-shadow { box-shadow: 0 10px 30px rgba(16,24,40,0.08); }
-    .card-shadow-2 { box-shadow: 0 6px 18px rgba(16,24,40,0.06); }
-    .fade-slide-enter { transform: translateX(12px); opacity: 0; }
-    .fade-slide-enter-active { transform: translateX(0); opacity: 1; transition: all .36s cubic-bezier(.2,.9,.2,1); }
-    .fade-slide-exit { transform: translateX(0); opacity: 1; }
-    .fade-slide-exit-active { transform: translateX(-12px); opacity: 0; transition: all .28s cubic-bezier(.2,.9,.2,1); }
-    /* better scrollbar for tables */
-    .better-scroll::-webkit-scrollbar { height:10px; width:10px; }
-    .better-scroll::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius:999px; }
-    /* small responsive */
+
+    body {
+      -webkit-font-smoothing: antialiased;
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+    }
+
+    .card-shadow {
+      box-shadow: 0 10px 30px rgba(16, 24, 40, 0.08);
+    }
+
+    .better-scroll::-webkit-scrollbar {
+      height: 10px;
+      width: 10px;
+    }
+
+    .better-scroll::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 999px;
+    }
+
+    .tab-btn.active {
+      box-shadow: 0 6px 18px rgba(16, 24, 40, 0.06);
+    }
+
+    .rotate-180 {
+      transform: rotate(180deg);
+    }
+
+    /* Ultra 3D Telescope Funnel Styles */
+    .funnel-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 50px 20px;
+      perspective: 1500px;
+    }
+
+    .funnel-3d {
+      position: relative;
+      width: 100%;
+      max-width: 600px;
+      height: 520px;
+      filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.15));
+    }
+
+    .funnel-layer {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: white;
+      font-weight: 800;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    .funnel-layer:hover {
+      filter: brightness(1.15) drop-shadow(0 20px 40px rgba(0, 0, 0, 0.25));
+      transform: translateX(-50%) translateZ(20px) scale(1.08);
+    }
+
+    .funnel-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      height: 100%;
+      justify-content: center;
+    }
+
+    .funnel-label {
+      letter-spacing: 0.8px;
+      text-transform: capitalize;
+      font-weight: 700;
+    }
+
+    .funnel-number {
+      font-weight: 900;
+    }
+
+    .layer-1 {
+      top: 0px;
+      width: 520px;
+      height: 75px;
+      background: linear-gradient(180deg, #ec4899 0%, #be185d 100%);
+      clip-path: polygon(3% 0%, 97% 0%, 87% 100%, 13% 100%);
+      box-shadow: -8px 12px 20px rgba(0, 0, 0, 0.15), inset -3px -3px 10px rgba(0, 0, 0, 0.2), inset 3px 3px 10px rgba(255, 255, 255, 0.15), 0 20px 40px rgba(236, 72, 153, 0.3);
+      animation: fadeInTele 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+    }
+
+    .layer-1 .funnel-label {
+      font-size: 15px;
+    }
+
+    .layer-1 .funnel-number {
+      font-size: 28px;
+    }
+
+    .layer-2 {
+      top: 80px;
+      width: 430px;
+      height: 75px;
+      background: linear-gradient(180deg, #3b82f6 0%, #1e3a8a 100%);
+      clip-path: polygon(6% 0%, 94% 0%, 82% 100%, 18% 100%);
+      box-shadow: -6px 10px 18px rgba(0, 0, 0, 0.2), inset -3px -3px 10px rgba(0, 0, 0, 0.2), inset 3px 3px 10px rgba(255, 255, 255, 0.12), 0 16px 32px rgba(59, 130, 246, 0.35);
+      animation: fadeInTele 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+    }
+
+    .layer-2 .funnel-label {
+      font-size: 14px;
+    }
+
+    .layer-2 .funnel-number {
+      font-size: 26px;
+    }
+
+    .layer-3 {
+      top: 160px;
+      width: 340px;
+      height: 75px;
+      background: linear-gradient(180deg, #10b981 0%, #065f46 100%);
+      clip-path: polygon(9% 0%, 91% 0%, 77% 100%, 23% 100%);
+      box-shadow: -5px 8px 16px rgba(0, 0, 0, 0.2), inset -3px -3px 10px rgba(0, 0, 0, 0.2), inset 3px 3px 10px rgba(255, 255, 255, 0.1), 0 14px 28px rgba(16, 185, 129, 0.35);
+      animation: fadeInTele 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
+    }
+
+    .layer-3 .funnel-label {
+      font-size: 13px;
+    }
+
+    .layer-3 .funnel-number {
+      font-size: 24px;
+    }
+
+    .layer-4 {
+      top: 240px;
+      width: 250px;
+      height: 75px;
+      background: linear-gradient(180deg, #ef4444 0%, #991b1b 100%);
+      clip-path: polygon(12% 0%, 88% 0%, 72% 100%, 28% 100%);
+      box-shadow: -4px 6px 14px rgba(0, 0, 0, 0.22), inset -3px -3px 10px rgba(0, 0, 0, 0.2), inset 3px 3px 10px rgba(255, 255, 255, 0.08), 0 12px 24px rgba(239, 68, 68, 0.35);
+      animation: fadeInTele 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s both;
+    }
+
+    .layer-4 .funnel-label {
+      font-size: 12px;
+    }
+
+    .layer-4 .funnel-number {
+      font-size: 22px;
+    }
+
+    .layer-5 {
+      top: 320px;
+      width: 160px;
+      height: 75px;
+      background: linear-gradient(180deg, #4f46e5 0%, #312e81 100%);
+      clip-path: polygon(15% 0%, 85% 0%, 67% 100%, 33% 100%);
+      box-shadow: -3px 4px 12px rgba(0, 0, 0, 0.25), inset -3px -3px 10px rgba(0, 0, 0, 0.2), inset 3px 3px 10px rgba(255, 255, 255, 0.06), 0 10px 20px rgba(79, 70, 229, 0.35);
+      animation: fadeInTele 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s both;
+    }
+
+    .layer-5 .funnel-label {
+      font-size: 11px;
+    }
+
+    .layer-5 .funnel-number {
+      font-size: 20px;
+    }
+
+    .layer-6 {
+      top: 400px;
+      width: 70px;
+      height: 75px;
+      background: linear-gradient(180deg, #06b6d4 0%, #0c4a6e 100%);
+      clip-path: polygon(18% 0%, 82% 0%, 62% 100%, 38% 100%);
+      box-shadow: -2px 2px 10px rgba(0, 0, 0, 0.28), inset -3px -3px 10px rgba(0, 0, 0, 0.2), inset 3px 3px 10px rgba(255, 255, 255, 0.04), 0 8px 16px rgba(6, 182, 212, 0.35);
+      animation: fadeInTele 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.6s both;
+    }
+
+    .layer-6 .funnel-label {
+      font-size: 9px;
+    }
+
+    .layer-6 .funnel-number {
+      font-size: 18px;
+    }
+
+    @keyframes fadeInTele {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-25px) scale(0.85);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0) scale(1);
+      }
+    }
+
+    .modern-table {
+      border-collapse: separate;
+      border-spacing: 0;
+      width: 100%;
+      font-size: 13px;
+      overflow: hidden;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .modern-table thead {
+      background: linear-gradient(135deg, #001f3f 0%, #003366 100%);
+      color: white;
+    }
+
+    .modern-table thead th {
+      padding: 14px 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid #b71c1c;
+    }
+
+    .modern-table tbody tr {
+      background: white;
+      transition: all 0.2s ease;
+    }
+
+    .modern-table tbody tr:nth-child(even) {
+      background: #f8fafc;
+    }
+
+    .modern-table tbody tr:hover {
+      background: #e8f4ff;
+      transform: scale(1.01);
+      box-shadow: 0 4px 12px rgba(0, 31, 63, 0.1);
+    }
+
+    .modern-table tbody td {
+      padding: 12px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .modern-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .status-done {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .status-subs {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .status-offer {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .status-lift {
+      background: #e0e7ff;
+      color: #3730a3;
+    }
+
+    .status-resolved {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
     @media (max-width: 1100px) {
-      .grid-main { grid-template-columns: 1fr !important; }
-      .sidebar { position: sticky; top: 10px; z-index: 20; width:100%; display:flex; gap:12px; overflow:auto; padding:12px; border-radius:12px; }
+      .grid-main {
+        grid-template-columns: 1fr !important;
+      }
+
+      .sidebar {
+        position: sticky;
+        top: 10px;
+        z-index: 20;
+        width: 100%;
+        display: flex;
+        gap: 12px;
+        overflow: auto;
+        padding: 12px;
+        border-radius: 12px;
+      }
+
+      .top-kpi-row {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
     }
-
-    /* Additional layout fixes to keep original look but tidy */
-    .tab-btn.active { box-shadow: 0 6px 18px rgba(16,24,40,0.06); }
-    .table-small th, .table-small td { font-size:13px; padding:8px; }
-    .table-pl th, .table-pl td { font-size:13px; padding:10px 8px; border-bottom:1px solid #f1f5f9; }
-    .green { color:#16a34a; font-weight:700; }
-    .red { color:#ef4444; font-weight:700; }
-
-    /* keep revenue chart compact horizontally */
-    .horizontal-chart { height:280px !important; }
-    .compact { height:140px !important; }
-
-    /* style for action buttons row */
-    .actions-row { display:flex; gap:8px; align-items:center; justify-content:flex-end; flex-wrap:wrap; }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-900">
 
+<body class="bg-gray-50 text-gray-900">
   <div class="app grid grid-cols-[320px_1fr] gap-8 min-h-screen p-8">
-    <!-- SIDEBAR (unchanged structure) -->
-    <aside class="sidebar bg-white rounded-2xl card-shadow p-6 flex flex-col">
+    <aside class="sidebar bg-white rounded-2xl card-shadow p-6 flex flex-col sticky top-8"
+      style="height: calc(100vh - 4rem); overflow-y: auto;">
       <div class="flex items-center gap-3">
-        <div class="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-white" style="background: linear-gradient(135deg,#b71c1c,#001f3f)">P</div>
+        <div class="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-white"
+          style="background: linear-gradient(135deg,#b71c1c,#001f3f)">P</div>
         <div>
           <div class="text-sm font-semibold text-[#001f3f]">PIS</div>
           <div class="text-xs text-gray-500">Petrochemical & New Business</div>
         </div>
       </div>
-
       <nav class="mt-6 flex flex-col gap-2" id="sidebarNav">
-        <button data-tab="commercial" class="tab-btn active text-left px-3 py-2 rounded-lg font-semibold text-[#001f3f] bg-gradient-to-r from-[#001f3f]/80 to-[#b71c1c]/80 text-white">Commercial</button>
-        <button data-tab="operation" class="tab-btn text-left px-3 py-2 rounded-lg font-semibold text-gray-700 hover:bg-gray-100">Operation</button>
-        <button data-tab="market" class="tab-btn text-left px-3 py-2 rounded-lg font-semibold text-gray-700 hover:bg-gray-100">Market Research</button>
-        <button data-tab="voyage" class="tab-btn text-left px-3 py-2 rounded-lg font-semibold text-gray-700 hover:bg-gray-100">Voyage Calculation</button>
+        <div class="relative">
+          <button id="commercialToggle"
+            class="tab-btn active w-full text-left px-3 py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-[#001f3f]/80 to-[#b71c1c]/80 flex items-center justify-between">
+            <span>Commercial</span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 transition-transform rotate-180" fill="none"
+              viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div id="commercialSubmenu" class="flex flex-col mt-1 ml-4">
+            <button data-tab="pl"
+              class="tab-btn active text-left px-3 py-2 rounded-lg font-medium text-gray-700 bg-gray-100 hover:bg-gray-100">P/L</button>
+            <button data-tab="salesfunnel"
+              class="tab-btn text-left px-3 py-2 rounded-lg font-medium text-gray-700 hover:bg-gray-100">Sales
+              Funnel</button>
+          </div>
+        </div>
+        <button data-tab="operation"
+          class="tab-btn text-left px-3 py-2 rounded-lg font-semibold text-gray-700 hover:bg-gray-100">Operation</button>
+        <button data-tab="market"
+          class="tab-btn text-left px-3 py-2 rounded-lg font-semibold text-gray-700 hover:bg-gray-100">Market
+          Research</button>
       </nav>
-
-      <div class="mt-6 text-xs text-gray-500">Upload SalesOpportunity CSV</div>
-      <input id="fileInput" type="file" accept=".csv" class="mt-2 text-sm" />
-      <div class="mt-4 text-xs text-gray-400">Last update: <span id="lastUpdate">—</span></div>
+      <input id="fileInput" type="file" accept=".csv" class="mt-4 text-sm" />
+      <div class="mt-4 text-xs text-gray-400">Last update: <span id="lastUpdate">27 Oct 2025</span></div>
     </aside>
 
-    <!-- MAIN PANE -->
     <main class="pane overflow-auto">
-      <!-- header -->
-      <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
         <div>
-          <div class="text-2xl font-bold text-[#001f3f]">Petrochemical and New Business Intelligence Dashboard</div>
-          <div class="text-sm text-gray-500">Pertamina International Shipping</div>
+          <div class="text-2xl font-bold text-[#001f3f]">Petrochemical & New Business Intelligence Dashboard</div>
+          <div class="text-sm text-gray-500">PT Pertamina International Shipping</div>
         </div>
-
         <div class="flex items-center gap-3">
           <div class="text-sm text-gray-600">User: Antariksa R.</div>
-          <div class="px-3 py-2 rounded-lg bg-white border text-sm">Jul 2025</div>
+          <div class="px-3 py-2 rounded-lg bg-white border text-sm">Sept 2025</div>
         </div>
       </div>
 
-      <!-- content grid -->
       <div class="grid grid-cols-12 gap-6 grid-main">
-        <!-- KPI top block (full width) -->
-        <section class="col-span-12 card rounded-2xl p-5 card-shadow-2">
-          <div class="flex gap-6 flex-wrap items-center">
-            <div class="flex-1 min-w-[240px] bg-gradient-to-r from-[#F6FFE7] to-[#E8FDEB] rounded-2xl p-5">
-              <div class="text-xs text-gray-600 font-semibold">Profit</div>
-              <div id="profitValue" class="text-3xl font-extrabold mt-1 text-[#001f3f]">$3.45M</div>
-              <div class="text-sm text-green-600 font-semibold mt-1">+8.2% YTD</div>
-              <div class="text-xs text-gray-400 mt-1">Periode Juli 2025</div>
+        <!-- KPI SECTION - Only for Commercial tabs -->
+        <section id="kpiSection" class="col-span-12 card rounded-2xl p-6 shadow-sm bg-white">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-gradient-to-r from-[#F6FFE7] to-[#E8FDEB] shadow-inner p-4 rounded-xl border">
+              <div class="text-sm text-gray-600 font-semibold">P/L (Real YTD Sept '25)</div>
+              <div id="profitValue" class="text-2xl font-extrabold mt-1 text-[#001f3f]">$4.3M</div>
+              <div class="text-sm text-red-600 font-semibold mt-1">-27.50% vs RKAP</div>
+              <div class="text-xs text-gray-400 mt-1">RKAP: $5.9M | Real: $4.3M</div>
             </div>
-
-            <div class="flex gap-4 flex-1 flex-wrap">
-              <div class="min-w-[180px] bg-white rounded-xl p-4 card-shadow">
-                <div class="text-xs text-gray-500">Revenue (YTD)</div>
-                <div id="revenueValue" class="text-xl font-bold">$23.35M</div>
-                <div class="text-xs text-gray-400">YTD Jul 2025</div>
-              </div>
-              <div class="min-w-[180px] bg-white rounded-xl p-4 card-shadow">
-                <div class="text-xs text-gray-500">Cost (YTD)</div>
-                <div id="costValue" class="text-xl font-bold">$9.70M</div>
-                <div class="text-xs text-gray-400">YTD Jul 2025</div>
-              </div>
-              <div class="min-w-[180px] bg-white rounded-xl p-4 card-shadow">
-                <div class="text-xs text-gray-500">Settlement Progress (%)</div>
-                <div id="collectionValue" class="text-xl font-bold">50.57%</div>
-                <div class="text-xs text-gray-400">Outstanding $11.54M</div>
-              </div>
-              <div class="min-w-[180px] bg-white rounded-xl p-4 card-shadow">
-                <div class="text-xs text-gray-500">Outstanding (USD)</div>
-                <div id="collectionValue" class="text-xl font-bold">$11.54M</div>
-                <div class="text-xs text-gray-400">Receivables</div>
-              </div>  
+            <div class="bg-gradient-to-r from-[#FFF9E7] to-[#FFF4E0] shadow-inner p-4 rounded-xl border">
+              <div class="text-sm text-gray-600 font-semibold">Revenue (Real YTD Sept '25)</div>
+              <div id="revenueValue" class="text-2xl font-extrabold mt-1 text-[#001f3f]">$30.3M</div>
+              <div class="text-sm text-red-600 font-semibold mt-1">-11% vs RKAP</div>
+              <div class="text-xs text-gray-400 mt-1">RKAP: $34M | Real: $30.3M</div>
+            </div>
+            <div class="bg-gradient-to-r from-[#E7F9FF] to-[#E8F5FD] shadow-inner p-4 rounded-xl border">
+              <div class="text-sm text-gray-600 font-semibold">Cost (Real YTD Sept '25)</div>
+              <div id="costValue" class="text-2xl font-extrabold mt-1 text-[#001f3f]">$26M</div>
+              <div class="text-sm text-green-600 font-semibold mt-1">-8% vs RKAP</div>
+              <div class="text-xs text-gray-400 mt-1">RKAP: $28.1M | Real: $26M</div>
+            </div>
+            <div class="bg-gradient-to-r from-[#FFF0F0] to-[#FFE8ED] shadow-inner p-4 rounded-xl border">
+              <div class="text-sm text-gray-600 font-semibold">P/L vs RKAP YTD (%)</div>
+              <div id="plVsRkapValue" class="text-2xl font-extrabold mt-1 text-[#001f3f]">-27.50%</div>
+              <div class="text-sm text-red-600 font-semibold mt-1">Divergence</div>
+              <div class="text-xs text-gray-400 mt-1">Penurunan P/L Signifikan</div>
             </div>
           </div>
         </section>
 
-        <!-- LEFT: main sections (Commercial / Operation / Market / Voyage) -->
-        <section id="contentArea" class="col-span-7 space-y-6">
-          <!-- COMMERCIAL (default shown) -->
-          <div id="tab-commercial" class="tab-content card rounded-2xl p-5" data-tab="commercial">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-lg font-bold text-[#001f3f]">Commercial</h3>
-              <div class="flex items-center gap-2">
-                <button id="btnExportCSV" class="text-sm px-3 py-1 rounded-md border">Export Opportunities CSV</button>
-                <button id="exportPLCsv" class="text-sm px-3 py-1 rounded-md border">Export P/L CSV</button>
-                <button id="refreshCommercial" class="text-sm px-3 py-1 rounded-md bg-[#001f3f] text-white">Refresh</button>
+        <section id="contentArea" class="col-span-12">
+          <!-- TAB P/L -->
+          <div id="tab-pl" class="tab-content card rounded-2xl p-5 bg-white" data-tab="pl" style="display:none;">
+            <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+              <h3 class="text-lg font-bold text-[#001f3f]">P/L Analysis — YTD September 2025</h3>
+              <div class="flex gap-2">
+                <button id="exportPLPdf" class="btn text-sm px-3 py-1 border rounded hover:bg-gray-50">Export
+                  PDF</button>
+                <button id="exportPLCsv" class="btn text-sm px-3 py-1 border rounded hover:bg-gray-50">Export
+                  CSV</button>
+                <button id="togglePLTable" class="btn text-sm px-3 py-1 border rounded hover:bg-gray-50">Toggle
+                  Table</button>
               </div>
             </div>
 
-            <!-- KPI row -->
-            <div class="grid grid-cols-4 gap-4 mb-4">
-              <div class="bg-white rounded-xl p-4 card-shadow">
-                <div class="text-xs text-gray-500">Total Revenue (USD)</div>
-                <div id="kpiTotalRevenue" class="text-xl font-bold">$23,347,974</div>
-                <div class="text-xs text-gray-400">YTD</div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div class="bg-white rounded-xl p-4 card-shadow border">
+                <div class="text-sm font-semibold text-[#001f3f]">Revenue</div>
+                <div class="text-lg font-bold text-green-600" id="cardRevenue">$30.3M</div>
+                <div class="text-xs text-gray-400 mt-1">RKAP YTD: $34M | Real YTD: $30.3M</div>
               </div>
-              <div class="bg-white rounded-xl p-4 card-shadow">
-                <div class="text-xs text-gray-500">Settlement Progress (%)</div>
-                <div id="kpiCollectionRate" class="text-xl font-bold">50.57%</div>
-                <div class="text-xs text-gray-400">Collected / Revenue</div>
+              <div class="bg-white rounded-xl p-4 card-shadow border">
+                <div class="text-sm font-semibold text-[#001f3f]">Cost</div>
+                <div class="text-lg font-bold text-red-600" id="cardCost">$26.0M</div>
+                <div class="text-xs text-gray-400 mt-1">RKAP YTD: $28.1M | Real YTD: $26.0M</div>
               </div>
-              <div class="bg-white rounded-xl p-4 card-shadow">
-                <div class="text-xs text-gray-500">Outstanding (USD)</div>
-                <div id="kpiOutstanding" class="text-xl font-bold">$11,542,048</div>
-                <div class="text-xs text-gray-400">Receivables</div>
-              </div>
-              <div class="bg-white rounded-xl p-4 card-shadow">
-                <div class="text-xs text-gray-500">Settlement Progress (%)</div>
-                <div id="kpiConversion" class="text-xl font-bold">36%</div>
-                <div class="text-xs text-gray-400">Awarded / Opportunities</div>
+              <div class="bg-white rounded-xl p-4 card-shadow border">
+                <div class="text-sm font-semibold text-[#001f3f]">P/L</div>
+                <div class="text-lg font-bold text-blue-600" id="cardPL">$4.3M</div>
+                <div class="text-xs text-gray-400 mt-1">RKAP YTD: $5.9M | Real YTD: $4.3M | Penurunan: -27.50%</div>
               </div>
             </div>
 
-            <!-- Charts grid -->
-            <div class="grid grid-cols-2 gap-4">
-              <!-- Collected vs Outstanding -->
-              <div class="bg-white rounded-xl p-4 card-shadow">
-                <div class="flex items-center justify-between mb-2">
-                  <div class="text-sm font-semibold text-[#001f3f]">Revenue: Collected vs Outstanding</div>
-                  <div class="text-xs text-gray-400">USD</div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+              <div class="bg-white rounded-xl p-5 card-shadow border">
+                <div class="text-sm font-semibold text-[#001f3f] mb-3">Perbandingan Revenue, Cost, dan P/L (YTD Sept
+                  2025)</div>
+                <div class="relative h-72"><canvas id="plSummaryChart"></canvas></div>
+                <div class="text-xs text-gray-500 mt-3 p-3 bg-gray-50 rounded-lg">
+                  <span class="font-semibold text-[#001f3f]">Insight:</span> P/L Realisasi turun -27.50% dibandingkan
+                  RKAP. Penurunan Revenue lebih besar dari penurunan Cost secara absolut.
                 </div>
-                <canvas id="chartCollectedBar" class="horizontal-chart"></canvas>
               </div>
 
-              <!-- Sales Funnel -->
-              <div class="bg-white rounded-xl p-4 card-shadow">
-                <div class="flex items-center justify-between mb-2">
-                  <div class="text-sm font-semibold text-[#001f3f]">Sales Funnel & Breakdown</div>
-                  <div class="text-xs text-gray-400">Opportunities</div>
+              <div class="bg-white rounded-xl p-5 card-shadow border lg:col-span-2">
+                <div class="flex items-center justify-between mb-4">
+                  <div class="text-sm font-semibold text-[#001f3f]">Realisasi per Produk YTD September 2025</div>
+                  <div class="flex gap-2 text-xs">
+                    <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-blue-500"></span>P/L</span>
+                    <span class="flex items-center gap-1"><span
+                        class="w-3 h-3 rounded bg-green-500 opacity-50"></span>Revenue</span>
+                    <span class="flex items-center gap-1"><span
+                        class="w-3 h-3 rounded bg-red-500 opacity-40"></span>Cost</span>
+                  </div>
                 </div>
-                <div class="flex items-center gap-4">
-                  <canvas id="chartFunnelDoughnut" style="width:160px;height:140px"></canvas>
-                  <canvas id="chartFunnelBar" style="width:260px;height:140px"></canvas>
+
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+                  <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 border border-blue-200">
+                    <div class="text-xs text-gray-600 mb-1">FSO Aberkha</div>
+                    <div class="text-lg font-bold text-blue-600">$1.7M</div>
+                    <div class="text-xs text-green-600 font-semibold">Top P/L</div>
+                  </div>
+                  <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 border border-green-200">
+                    <div class="text-xs text-gray-600 mb-1">LBO</div>
+                    <div class="text-lg font-bold text-green-600">$1.2M</div>
+                    <div class="text-xs text-green-600 font-semibold">Strong</div>
+                  </div>
+                  <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-3 border border-purple-200">
+                    <div class="text-xs text-gray-600 mb-1">Paraxylene</div>
+                    <div class="text-lg font-bold text-purple-600">$0.7M</div>
+                    <div class="text-xs text-green-600 font-semibold">Good</div>
+                  </div>
+                  <div class="bg-gradient-to-br from-amber-50 to-amber-100 rounded-lg p-3 border border-amber-200">
+                    <div class="text-xs text-gray-600 mb-1">Other</div>
+                    <div class="text-lg font-bold text-amber-600">$0.6M</div>
+                    <div class="text-xs text-green-600 font-semibold">Stable</div>
+                  </div>
+                  <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-3 border border-red-200">
+                    <div class="text-xs text-gray-600 mb-1">FAME</div>
+                    <div class="text-lg font-bold text-red-600">-$0.4M</div>
+                    <div class="text-xs text-red-600 font-semibold">Alert</div>
+                  </div>
                 </div>
-                <div class="mt-3 small-text">Awarded: <span id="awardedCount">0</span> • On Progress: <span id="onprogCount">0</span> • Failed: <span id="failedCount">0</span></div>
+
+                <div class="relative h-64"><canvas id="plPerProductChart"></canvas></div>
+
+                <div
+                  class="text-xs text-gray-500 mt-3 p-3 bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border border-red-100">
+                  <span class="font-semibold text-red-600">⚠️ Perhatian:</span> FAME mencatat P/L negatif ($-0.4M). FSO
+                  Aberkha & Fastron menjadi kontributor P/L positif terbesar ($1.7M).
+                </div>
               </div>
+            </div>
 
-              <!-- New: P/L Summary compact (horizontal) -->
-              <div class="bg-white rounded-xl p-4 card-shadow col-span-2">
-                <div class="flex items-center justify-between mb-2">
-                  <div class="text-sm font-semibold text-[#001f3f]">Profit & Loss (Summary per produk) — YTD Juli 2025</div>
-                  <div class="actions-row">
-                    <button id="exportPLPdf" class="btn text-sm px-3 py-1 border">Export P/L PDF</button>
-                    <button id="togglePLTable" class="btn text-sm px-3 py-1 border">Toggle Table</button>
+            <div class="bg-white rounded-xl p-5 card-shadow border mb-6">
+              <div class="text-sm font-semibold text-[#001f3f] mb-4">Kontribusi Pendapatan per Customer YTD Sept 2025
+              </div>
+              <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="relative h-64"><canvas id="customerPieChart"></canvas></div>
+                <div class="lg:col-span-2">
+                  <div class="text-xs text-gray-500 mb-3 p-3 bg-blue-50 rounded-lg">
+                    <span class="font-semibold text-[#001f3f]">Total Pendapatan:</span> <span id="totalCustomerRp"
+                      class="font-bold"></span><br>
+                    <span class="font-semibold text-[#001f3f]">Top 3 Customer:</span> <span id="top3"
+                      class="font-medium"></span>
                   </div>
+                  <div class="grid grid-cols-2 md:grid-cols-3 gap-3" id="customerLegend"></div>
                 </div>
+              </div>
+            </div>
 
-                <div id="plCharts" class="grid grid-cols-2 gap-4">
-                  <div class="p-2">
-                    <canvas id="plChart" class="compact"></canvas>
-                  </div>
-                  <div class="p-2">
-                    <canvas id="revByProd" class="compact"></canvas>
-                  </div>
+            <div class="bg-white rounded-xl p-6 card-shadow border mb-6">
+              <h3 class="text-base font-bold text-[#001f3f] mb-4">P&L Performance Segment YTD September 2025</h3>
+              <div class="mb-8">
+                <div class="flex items-center gap-2 mb-3">
+                  <div class="w-1 h-6 bg-green-600 rounded"></div>
+                  <h4 class="text-sm font-bold text-gray-800">Revenue (Juta USD)</h4>
                 </div>
-
-                <div id="plTableWrap" class="mt-4 overflow-auto better-scroll" style="max-height:380px">
-                  <table class="min-w-full table-pl bg-white">
-                    <thead class="bg-gray-50 sticky top-0">
+                <div class="overflow-x-auto">
+                  <table class="modern-table">
+                    <thead>
                       <tr>
-                        <th class="px-3 py-2 text-left">Produk</th>
-                        <th class="px-3 py-2 text-left">RKAP 2025</th>
-                        <th class="px-3 py-2 text-left">RKAP YTD Juli 2025</th>
-                        <th class="px-3 py-2 text-left">Real YTD Juli 2025</th>
-                        <th class="px-3 py-2 text-left">Δ vs RKAP (USD)</th>
-                        <th class="px-3 py-2 text-left">Δ (%)</th>
-                        <th class="px-3 py-2 text-left">Status</th>
+                        <th>Produk</th>
+                        <th class="text-right">RKAP 2025</th>
+                        <th class="text-right">RKAP YTD Sept</th>
+                        <th class="text-right">Real YTD Sept</th>
+                        <th class="text-right">Δ Real vs RKAP (USD)</th>
+                        <th class="text-right">Δ Real vs RKAP (%)</th>
                       </tr>
                     </thead>
-                    <tbody id="plTableBody" class="bg-white divide-y divide-gray-100"></tbody>
+                    <tbody>
+                      <tr>
+                        <td>Asphalt</td>
+                        <td class="text-right">4.62</td>
+                        <td class="text-right">3.36</td>
+                        <td class="text-right">3.89</td>
+                        <td class="text-right font-semibold text-green-600">0.53</td>
+                        <td class="text-right font-semibold text-green-600">16%</td>
+                      </tr>
+                      <tr>
+                        <td>FAME</td>
+                        <td class="text-right">2.59</td>
+                        <td class="text-right">2.51</td>
+                        <td class="text-right">3.32</td>
+                        <td class="text-right font-semibold text-green-600">0.81</td>
+                        <td class="text-right font-semibold text-green-600">32%</td>
+                      </tr>
+                      <tr>
+                        <td>FSO</td>
+                        <td class="text-right">9.18</td>
+                        <td class="text-right">6.87</td>
+                        <td class="text-right">6.87</td>
+                        <td class="text-right font-semibold text-gray-600">0.00</td>
+                        <td class="text-right font-semibold text-gray-600">0%</td>
+                      </tr>
+                      <tr>
+                        <td>LBO</td>
+                        <td class="text-right">10.99</td>
+                        <td class="text-right">8.29</td>
+                        <td class="text-right">5.70</td>
+                        <td class="text-right font-semibold text-red-600">-2.59</td>
+                        <td class="text-right font-semibold text-red-600">-31%</td>
+                      </tr>
+                      <tr>
+                        <td>Methanol</td>
+                        <td class="text-right">1.93</td>
+                        <td class="text-right">1.45</td>
+                        <td class="text-right">0.00</td>
+                        <td class="text-right font-semibold text-red-600">-1.45</td>
+                        <td class="text-right font-semibold text-red-600">-100%</td>
+                      </tr>
+                      <tr>
+                        <td>Other</td>
+                        <td class="text-right">1.56</td>
+                        <td class="text-right">0.78</td>
+                        <td class="text-right">3.62</td>
+                        <td class="text-right font-semibold text-green-600">2.84</td>
+                        <td class="text-right font-semibold text-green-600">364%</td>
+                      </tr>
+                      <tr>
+                        <td>Paraxylene</td>
+                        <td class="text-right">2.82</td>
+                        <td class="text-right">2.12</td>
+                        <td class="text-right">4.28</td>
+                        <td class="text-right font-semibold text-green-600">2.17</td>
+                        <td class="text-right font-semibold text-green-600">102%</td>
+                      </tr>
+                      <tr>
+                        <td>Solvent</td>
+                        <td class="text-right">0.10</td>
+                        <td class="text-right">0.08</td>
+                        <td class="text-right">0.30</td>
+                        <td class="text-right font-semibold text-green-600">0.22</td>
+                        <td class="text-right font-semibold text-green-600">295%</td>
+                      </tr>
+                      <tr>
+                        <td>Caustic Soda</td>
+                        <td class="text-right">3.07</td>
+                        <td class="text-right">1.92</td>
+                        <td class="text-right">1.63</td>
+                        <td class="text-right font-semibold text-red-600">-0.29</td>
+                        <td class="text-right font-semibold text-red-600">-15%</td>
+                      </tr>
+                      <tr>
+                        <td>Dry Bulk</td>
+                        <td class="text-right">8.68</td>
+                        <td class="text-right">6.23</td>
+                        <td class="text-right">0.64</td>
+                        <td class="text-right font-semibold text-red-600">-5.59</td>
+                        <td class="text-right font-semibold text-red-600">-90%</td>
+                      </tr>
+                      <tr>
+                        <td>Asam Sulfat - Asam Fosfat</td>
+                        <td class="text-right">0.42</td>
+                        <td class="text-right">0.42</td>
+                        <td class="text-right">0.00</td>
+                        <td class="text-right font-semibold text-red-600">-0.42</td>
+                        <td class="text-right font-semibold text-red-600">-100%</td>
+                      </tr>
+                      <tr class="bg-blue-50 font-bold">
+                        <td>TOTAL</td>
+                        <td class="text-right">45.96</td>
+                        <td class="text-right">34.03</td>
+                        <td class="text-right">30.26</td>
+                        <td class="text-right text-red-600">-3.76</td>
+                        <td class="text-right text-red-600">-11%</td>
+                      </tr>
+                    </tbody>
                   </table>
                 </div>
               </div>
-
-              <!-- Sales Opportunity Table -->
-              <div class="bg-white rounded-xl p-4 card-shadow col-span-2">
-                <div class="flex items-center justify-between mb-2">
-                  <div>
-                    <div class="text-sm font-semibold text-[#001f3f]">Sales Opportunity Table</div>
-                    <div class="text-xs text-gray-400">Dataset dapat diupload via CSV</div>
-                  </div>
-                  <div class="text-xs text-gray-500">Total: <span id="oppCount">0</span></div>
+              <div class="mb-8">
+                <div class="flex items-center gap-2 mb-3">
+                  <div class="w-1 h-6 bg-red-600 rounded"></div>
+                  <h4 class="text-sm font-bold text-gray-800">Cost Basis SLA (Juta USD)</h4>
                 </div>
-
-                <div class="overflow-auto better-scroll" style="max-height:320px">
-                  <table class="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead class="bg-gray-50 sticky top-0">
+                <div class="overflow-x-auto">
+                  <table class="modern-table">
+                    <thead>
                       <tr>
-                        <th class="px-3 py-2 text-left">No</th>
-                        <th class="px-3 py-2 text-left">Status</th>
-                        <th class="px-3 py-2 text-left">Vessel</th>
-                        <th class="px-3 py-2 text-left">Account</th>
-                        <th class="px-3 py-2 text-left">Cargo</th>
-                        <th class="px-3 py-2 text-left">Volume</th>
-                        <th class="px-3 py-2 text-left">Freight</th>
-                        <th class="px-3 py-2 text-left">Margin</th>
+                        <th>Produk</th>
+                        <th class="text-right">RKAP 2025</th>
+                        <th class="text-right">RKAP YTD Sept</th>
+                        <th class="text-right">Real YTD Sept</th>
+                        <th class="text-right">Δ Real vs RKAP (USD)</th>
+                        <th class="text-right">Δ Real vs RKAP (%)</th>
                       </tr>
                     </thead>
-                    <tbody id="oppTableBody" class="bg-white divide-y divide-gray-100"></tbody>
+                    <tbody>
+                      <tr>
+                        <td>Asphalt</td>
+                        <td class="text-right">3.94</td>
+                        <td class="text-right">2.90</td>
+                        <td class="text-right">3.40</td>
+                        <td class="text-right font-semibold text-red-600">0.49</td>
+                        <td class="text-right font-semibold text-red-600">17%</td>
+                      </tr>
+                      <tr>
+                        <td>FAME</td>
+                        <td class="text-right">2.38</td>
+                        <td class="text-right">2.31</td>
+                        <td class="text-right">3.73</td>
+                        <td class="text-right font-semibold text-red-600">1.41</td>
+                        <td class="text-right font-semibold text-red-600">61%</td>
+                      </tr>
+                      <tr>
+                        <td>FSO</td>
+                        <td class="text-right">9.29</td>
+                        <td class="text-right">6.96</td>
+                        <td class="text-right">5.21</td>
+                        <td class="text-right font-semibold text-green-600">-1.75</td>
+                        <td class="text-right font-semibold text-green-600">-25%</td>
+                      </tr>
+                      <tr>
+                        <td>LBO</td>
+                        <td class="text-right">8.16</td>
+                        <td class="text-right">6.16</td>
+                        <td class="text-right">4.55</td>
+                        <td class="text-right font-semibold text-green-600">-1.62</td>
+                        <td class="text-right font-semibold text-green-600">-26%</td>
+                      </tr>
+                      <tr>
+                        <td>Methanol</td>
+                        <td class="text-right">0.58</td>
+                        <td class="text-right">0.58</td>
+                        <td class="text-right">0.00</td>
+                        <td class="text-right font-semibold text-green-600">-0.58</td>
+                        <td class="text-right font-semibold text-green-600">-100%</td>
+                      </tr>
+                      <tr>
+                        <td>Other</td>
+                        <td class="text-right">1.22</td>
+                        <td class="text-right">0.61</td>
+                        <td class="text-right">3.02</td>
+                        <td class="text-right font-semibold text-red-600">2.42</td>
+                        <td class="text-right font-semibold text-red-600">398%</td>
+                      </tr>
+                      <tr>
+                        <td>Paraxylene</td>
+                        <td class="text-right">2.34</td>
+                        <td class="text-right">1.76</td>
+                        <td class="text-right">3.63</td>
+                        <td class="text-right font-semibold text-red-600">1.87</td>
+                        <td class="text-right font-semibold text-red-600">107%</td>
+                      </tr>
+                      <tr>
+                        <td>Solvent</td>
+                        <td class="text-right">0.08</td>
+                        <td class="text-right">0.08</td>
+                        <td class="text-right">0.30</td>
+                        <td class="text-right font-semibold text-red-600">0.22</td>
+                        <td class="text-right font-semibold text-red-600">260%</td>
+                      </tr>
+                      <tr>
+                        <td>Caustic Soda</td>
+                        <td class="text-right">2.00</td>
+                        <td class="text-right">1.25</td>
+                        <td class="text-right">1.55</td>
+                        <td class="text-right font-semibold text-red-600">0.31</td>
+                        <td class="text-right font-semibold text-red-600">25%</td>
+                      </tr>
+                      <tr>
+                        <td>Dry Bulk</td>
+                        <td class="text-right">7.32</td>
+                        <td class="text-right">5.13</td>
+                        <td class="text-right">0.58</td>
+                        <td class="text-right font-semibold text-green-600">-4.55</td>
+                        <td class="text-right font-semibold text-green-600">-89%</td>
+                      </tr>
+                      <tr>
+                        <td>Asam Sulfat - Asam Fosfat</td>
+                        <td class="text-right">0.35</td>
+                        <td class="text-right">0.35</td>
+                        <td class="text-right">0.00</td>
+                        <td class="text-right font-semibold text-green-600">-0.35</td>
+                        <td class="text-right font-semibold text-green-600">-100%</td>
+                      </tr>
+                      <tr class="bg-blue-50 font-bold">
+                        <td>TOTAL</td>
+                        <td class="text-right">37.66</td>
+                        <td class="text-right">28.11</td>
+                        <td class="text-right">25.98</td>
+                        <td class="text-right text-green-600">-2.14</td>
+                        <td class="text-right text-green-600">-8%</td>
+                      </tr>
+                    </tbody>
                   </table>
                 </div>
               </div>
-
-              <div class="bg-white rounded-xl p-4 card-shadow col-span-2">
-                <div class="text-sm font-semibold text-[#001f3f] mb-2">AI Market Summary (auto)</div>
-                <div id="aiSummaryBox" class="text-sm text-gray-600"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- OPERATION (unchanged structure) -->
-          <div id="tab-operation" class="tab-content hidden card rounded-2xl p-5" data-tab="operation">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-lg font-bold text-[#001f3f]">Operation</h3>
-              <div class="text-sm text-gray-500">Ship, performance, issues</div>
-            </div>
-
-            <div class="grid grid-cols-4 gap-4 mb-4">
-              <div class="bg-white rounded-xl p-4 card-shadow">
-                <div class="text-xs text-gray-500">Total Vessels</div>
-                <div id="opFleetTotal" class="text-xl font-bold">10</div>
-              </div>
-              <div class="bg-white rounded-xl p-4 card-shadow">
-                <div class="text-xs text-gray-500">FSO / STS Active</div>
-                <div id="opFSO" class="text-xl font-bold">4</div>
-              </div>
-              <div class="bg-white rounded-xl p-4 card-shadow">
-                <div class="text-xs text-gray-500">Docking (this month)</div>
-                <div id="opDocking" class="text-xl font-bold">1</div>
-              </div>
-              <div class="bg-white rounded-xl p-4 card-shadow">
-                <div class="text-xs text-gray-500">HSSE Incidents</div>
-                <div id="opHSSE" class="text-xl font-bold">0</div>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-              <div class="bg-white rounded-xl p-4 card-shadow">
-                <div class="flex items-center justify-between mb-2">
-                  <div class="text-sm font-semibold text-[#001f3f]">Fleet Overview</div>
-                  <div class="text-xs text-gray-400">No. vessels</div>
+              <div>
+                <div class="flex items-center gap-2 mb-3">
+                  <div class="w-1 h-6 bg-blue-600 rounded"></div>
+                  <h4 class="text-sm font-bold text-gray-800">Gross Profit (Juta USD)</h4>
                 </div>
-                <canvas id="chartFleet" style="height:220px"></canvas>
-              </div>
-
-              <div class="bg-white rounded-xl p-4 card-shadow">
-                <div class="text-sm font-semibold text-[#001f3f] mb-2">Utilization</div>
-                <div class="flex items-center gap-4">
-                  <canvas id="chartUtil" style="width:120px;height:120px"></canvas>
-                  <div>
-                    <div class="text-sm text-gray-600">Fleet Utilization</div>
-                    <div id="utilPercent" class="text-2xl font-bold">88%</div>
-                    <div class="text-xs text-gray-400">Based on deployed days</div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="bg-white rounded-xl p-4 card-shadow col-span-2">
-                <div class="text-sm font-semibold text-[#001f3f] mb-2">Operational Issues & Docking</div>
-                <div class="text-sm text-gray-600">
-                  <ul class="list-disc ml-5">
-                    <li><strong>Transko Aquila:</strong> BBTC renewal — On going</li>
-                    <li><strong>STS Sengeti / Sanga-Sanga:</strong> Replacement coordination — On going</li>
-                    <li><strong>Upcoming Docking:</strong> MT Kakap — 15 Jul 2025 – 9 Aug 2025</li>
-                  </ul>
+                <div class="overflow-x-auto">
+                  <table class="modern-table">
+                    <thead>
+                      <tr>
+                        <th>Produk</th>
+                        <th class="text-right">RKAP 2025</th>
+                        <th class="text-right">RKAP YTD Sept</th>
+                        <th class="text-right">Real YTD Sept</th>
+                        <th class="text-right">Δ Real vs RKAP (USD)</th>
+                        <th class="text-right">Δ Real vs RKAP (%)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Asphalt</td>
+                        <td class="text-right">0.68</td>
+                        <td class="text-right">0.46</td>
+                        <td class="text-right">0.50</td>
+                        <td class="text-right font-semibold text-green-600">0.04</td>
+                        <td class="text-right font-semibold text-green-600">8%</td>
+                      </tr>
+                      <tr>
+                        <td>FAME</td>
+                        <td class="text-right">0.21</td>
+                        <td class="text-right">0.20</td>
+                        <td class="text-right">-0.41</td>
+                        <td class="text-right font-semibold text-red-600">-0.61</td>
+                        <td class="text-right font-semibold text-red-600">-311%</td>
+                      </tr>
+                      <tr>
+                        <td>FSO</td>
+                        <td class="text-right">-0.11</td>
+                        <td class="text-right">-0.10</td>
+                        <td class="text-right">1.66</td>
+                        <td class="text-right font-semibold text-green-600">1.76</td>
+                        <td class="text-right font-semibold text-green-600">100%</td>
+                      </tr>
+                      <tr>
+                        <td>LBO</td>
+                        <td class="text-right">2.82</td>
+                        <td class="text-right">2.13</td>
+                        <td class="text-right">1.16</td>
+                        <td class="text-right font-semibold text-red-600">-0.97</td>
+                        <td class="text-right font-semibold text-red-600">-46%</td>
+                      </tr>
+                      <tr>
+                        <td>Methanol</td>
+                        <td class="text-right">1.35</td>
+                        <td class="text-right">0.87</td>
+                        <td class="text-right">0.00</td>
+                        <td class="text-right font-semibold text-red-600">-0.87</td>
+                        <td class="text-right font-semibold text-red-600">-100%</td>
+                      </tr>
+                      <tr>
+                        <td>Other</td>
+                        <td class="text-right">0.35</td>
+                        <td class="text-right">0.17</td>
+                        <td class="text-right">0.60</td>
+                        <td class="text-right font-semibold text-green-600">0.43</td>
+                        <td class="text-right font-semibold text-green-600">244%</td>
+                      </tr>
+                      <tr>
+                        <td>Paraxylene</td>
+                        <td class="text-right">0.48</td>
+                        <td class="text-right">0.36</td>
+                        <td class="text-right">0.65</td>
+                        <td class="text-right font-semibold text-green-600">0.29</td>
+                        <td class="text-right font-semibold text-green-600">82%</td>
+                      </tr>
+                      <tr>
+                        <td>Solvent</td>
+                        <td class="text-right">0.02</td>
+                        <td class="text-right">-0.01</td>
+                        <td class="text-right">-0.01</td>
+                        <td class="text-right font-semibold text-red-600">0</td>
+                        <td class="text-right font-semibold text-red-600">-14%</td>
+                      </tr>
+                      <tr>
+                        <td>Caustic Soda</td>
+                        <td class="text-right">1.08</td>
+                        <td class="text-right">0.67</td>
+                        <td class="text-right">0.08</td>
+                        <td class="text-right font-semibold text-red-600">-0.59</td>
+                        <td class="text-right font-semibold text-red-600">-88%</td>
+                      </tr>
+                      <tr>
+                        <td>Dry Bulk</td>
+                        <td class="text-right">1.36</td>
+                        <td class="text-right">1.10</td>
+                        <td class="text-right">0.06</td>
+                        <td class="text-right font-semibold text-red-600">-1.04</td>
+                        <td class="text-right font-semibold text-red-600">-94%</td>
+                      </tr>
+                      <tr>
+                        <td>Asam Sulfat - Asam Fosfat</td>
+                        <td class="text-right">0.07</td>
+                        <td class="text-right">0.07</td>
+                        <td class="text-right">0.00</td>
+                        <td class="text-right font-semibold text-red-600">-0.07</td>
+                        <td class="text-right font-semibold text-red-600">-100%</td>
+                      </tr>
+                      <tr class="bg-blue-50 font-bold">
+                        <td>TOTAL</td>
+                        <td class="text-right">8.30</td>
+                        <td class="text-right">5.91</td>
+                        <td class="text-right">4.29</td>
+                        <td class="text-right text-red-600">-1.63</td>
+                        <td class="text-right text-red-600">-27%</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- MARKET (unchanged) -->
-          <div id="tab-market" class="tab-content hidden card rounded-2xl p-5" data-tab="market">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-lg font-bold text-[#001f3f]">Market Research</h3>
-              <div class="text-sm text-gray-500">Summaries & trends</div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-              <div class="bg-white rounded-xl p-4 card-shadow">
-                <div class="text-sm font-semibold text-[#001f3f] mb-2">Chemical Market Snapshot</div>
-                <div id="marketSnapshot" class="text-sm text-gray-600">Chemical freight rates stable; Dry Bulk +13% MoM (sample).</div>
+            <div class="bg-white rounded-xl p-4 card-shadow border" id="detailPLTable" style="display:none;">
+              <div class="text-sm font-semibold text-[#001f3f] mb-3">Tabel Detail P/L Realisasi YTD Sept 2025 per Produk
               </div>
-
-              <div class="bg-white rounded-xl p-4 card-shadow">
-                <div class="text-sm font-semibold text-[#001f3f] mb-2">Freight Rate Quick Table</div>
-                <table class="w-full text-sm">
-                  <thead>
-                    <tr class="text-left text-xs text-gray-500">
-                      <th class="py-2">Route</th><th class="py-2">5K</th><th class="py-2">10K</th><th class="py-2">15K</th><th class="py-2">Trend</th>
+              <div class="overflow-auto better-scroll">
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th class="px-3 py-2 text-left">Produk</th>
+                      <th class="px-3 py-2 text-right">Revenue (M)</th>
+                      <th class="px-3 py-2 text-right">Cost (M)</th>
+                      <th class="px-3 py-2 text-right">P/L (M)</th>
                     </tr>
                   </thead>
-                  <tbody class="text-sm text-gray-700">
-                    <tr><td class="py-2">Korea–China</td><td>22</td><td>22</td><td>16</td><td>Stable</td></tr>
-                    <tr><td class="py-2">Singapore–China</td><td>36</td><td>36</td><td>29–30</td><td>Stable</td></tr>
-                    <tr><td class="py-2">AG–China</td><td>-</td><td>60–56</td><td>-</td><td>Slight ↓</td></tr>
+                  <tbody id="plProductTableBody" class="bg-white divide-y divide-gray-100"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB SALES FUNNEL -->
+          <div id="tab-salesfunnel" class="tab-content hidden card rounded-2xl p-6 bg-white" data-tab="salesfunnel">
+            <h3 class="text-lg font-bold text-[#001f3f]">Sales Funnel — YTD Sept 2025</h3>
+            <div class="flex flex-col lg:flex-row gap-12">
+              <div class="flex-1 flex justify-center items-start">
+                <div class="funnel-container w-full">
+                  <div class="funnel-3d">
+                    <div class="funnel-layer layer-1">
+                      <div class="funnel-content">
+                        <span class="funnel-label">Opportunities</span>
+                        <span class="funnel-number">123</span>
+                      </div>
+                    </div>
+                    <div class="funnel-layer layer-2">
+                      <div class="funnel-content">
+                        <span class="funnel-label">Vessel Available</span>
+                        <span class="funnel-number">59</span>
+                      </div>
+                    </div>
+                    <div class="funnel-layer layer-3">
+                      <div class="funnel-content">
+                        <span class="funnel-label">Offer Sent</span>
+                        <span class="funnel-number">39</span>
+                      </div>
+                    </div>
+                    <div class="funnel-layer layer-4">
+                      <div class="funnel-content">
+                        <span class="funnel-label">On Subs</span>
+                        <span class="funnel-number">20</span>
+                      </div>
+                    </div>
+                    <div class="funnel-layer layer-5">
+                      <div class="funnel-content">
+                        <span class="funnel-label">Lift Subs</span>
+                        <span class="funnel-number">20</span>
+                      </div>
+                    </div>
+                    <div class="funnel-layer layer-6">
+                      <div class="funnel-content">
+                        <span class="funnel-label">Done</span>
+                        <span class="funnel-number">20</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="w-full lg:w-72">
+                <div class="bg-white rounded-xl border border-gray-200 p-5">
+                  <h4 class="text-sm font-semibold text-[#001f3f] mb-4">Pipeline Summary</h4>
+                  <ul class="space-y-3">
+                    <li class="flex justify-between items-center">
+                      <span class="flex items-center gap-2 text-sm">
+                        <span class="w-3 h-3 rounded-full"
+                          style="background: linear-gradient(180deg, #ec4899 0%, #be185d 100%);"></span>
+                        <span>Opportunities</span>
+                      </span>
+                      <span class="font-bold text-gray-900">123</span>
+                    </li>
+                    <li class="flex justify-between items-center">
+                      <span class="flex items-center gap-2 text-sm">
+                        <span class="w-3 h-3 rounded-full"
+                          style="background: linear-gradient(180deg, #3b82f6 0%, #1e3a8a 100%);"></span>
+                        <span>Vessel Available</span>
+                      </span>
+                      <span class="font-bold text-gray-900">59</span>
+                    </li>
+                    <li class="flex justify-between items-center">
+                      <span class="flex items-center gap-2 text-sm">
+                        <span class="w-3 h-3 rounded-full"
+                          style="background: linear-gradient(180deg, #10b981 0%, #065f46 100%);"></span>
+                        <span>Offer Sent</span>
+                      </span>
+                      <span class="font-bold text-gray-900">39</span>
+                    </li>
+                    <li class="flex justify-between items-center">
+                      <span class="flex items-center gap-2 text-sm">
+                        <span class="w-3 h-3 rounded-full"
+                          style="background: linear-gradient(180deg, #ef4444 0%, #991b1b 100%);"></span>
+                        <span>On Subs</span>
+                      </span>
+                      <span class="font-bold text-gray-900">20</span>
+                    </li>
+                    <li class="flex justify-between items-center">
+                      <span class="flex items-center gap-2 text-sm">
+                        <span class="w-3 h-3 rounded-full"
+                          style="background: linear-gradient(180deg, #4f46e5 0%, #312e81 100%);"></span>
+                        <span>Lift Subs</span>
+                      </span>
+                      <span class="font-bold text-gray-900">20</span>
+                    </li>
+                    <li class="flex justify-between items-center">
+                      <span class="flex items-center gap-2 text-sm">
+                        <span class="w-3 h-3 rounded-full"
+                          style="background: linear-gradient(180deg, #06b6d4 0%, #0c4a6e 100%);"></span>
+                        <span>Done</span>
+                      </span>
+                      <span class="font-bold text-gray-900">20</span>
+                    </li>
+                  </ul>
+                  <div class="mt-6 pt-4 border-t border-gray-200">
+                    <div class="text-xs text-gray-600 mb-2">Conversion Rate</div>
+                    <div class="text-xl font-bold text-[#001f3f]">16.3%</div>
+                    <div class="text-xs text-gray-500">123 → 20 Done</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="mt-8">
+              <h4 class="text-lg font-semibold text-[#001f3f] mb-4">Detail Breakdown (showing 10 of 123)</h4>
+              <div class="overflow-auto rounded-xl">
+                <table class="modern-table">
+                  <thead>
+                    <tr>
+                      <th>No</th>
+                      <th>Status</th>
+                      <th>Vessel</th>
+                      <th>Account</th>
+                      <th>Progress</th>
+                      <th>Note</th>
+                      <th>Notified Date</th>
+                      <th>Awarded Date</th>
+                      <th>Laycan Start</th>
+                      <th>Laycan End</th>
+                      <th>Skema</th>
+                      <th>Route</th>
+                      <th>Cargo</th>
+                      <th>Volume</th>
+                      <th>Freight Rate</th>
+                      <th>OE</th>
+                      <th>Margin</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>1</td>
+                      <td><span class="status-badge status-subs">On Subs</span></td>
+                      <td>MT Alpha</td>
+                      <td>PT Pertamina</td>
+                      <td><strong>80%</strong></td>
+                      <td>Negotiation</td>
+                      <td>02/01/2025</td>
+                      <td>—</td>
+                      <td>04/01/2025</td>
+                      <td>06/01/2025</td>
+                      <td>COA</td>
+                      <td>Balikpapan - Surabaya</td>
+                      <td>Crude Oil</td>
+                      <td>60,000 KL</td>
+                      <td>$23.5</td>
+                      <td>$1.41M</td>
+                      <td><strong class="text-green-600">12%</strong></td>
+                    </tr>
+                    <tr>
+                      <td>2</td>
+                      <td><span class="status-badge status-done">Done</span></td>
+                      <td>MT Bravo</td>
+                      <td>PT Elnusa</td>
+                      <td><strong>100%</strong></td>
+                      <td>Completed</td>
+                      <td>10/01/2025</td>
+                      <td>15/01/2025</td>
+                      <td>12/01/2025</td>
+                      <td>14/01/2025</td>
+                      <td>Spot</td>
+                      <td>Dumai - Batam</td>
+                      <td>Fuel Oil</td>
+                      <td>45,000 KL</td>
+                      <td>$22.0</td>
+                      <td>$990K</td>
+                      <td><strong class="text-green-600">15%</strong></td>
+                    </tr>
+                    <tr>
+                      <td>3</td>
+                      <td><span class="status-badge status-offer">Offer Sent</span></td>
+                      <td>MT Charlie</td>
+                      <td>PT AKR Corporindo</td>
+                      <td><strong>70%</strong></td>
+                      <td>Awaiting Feedback</td>
+                      <td>18/01/2025</td>
+                      <td>—</td>
+                      <td>20/01/2025</td>
+                      <td>22/01/2025</td>
+                      <td>Spot</td>
+                      <td>Tanjung Priok - Pontianak</td>
+                      <td>Pertamax</td>
+                      <td>40,000 KL</td>
+                      <td>$25.1</td>
+                      <td>$1.00M</td>
+                      <td><strong class="text-green-600">10%</strong></td>
+                    </tr>
+                    <tr>
+                      <td>4</td>
+                      <td><span class="status-badge status-lift">Lift Subs</span></td>
+                      <td>MT Delta</td>
+                      <td>PT Petrogas</td>
+                      <td><strong>90%</strong></td>
+                      <td>Preparing Docs</td>
+                      <td>25/01/2025</td>
+                      <td>05/02/2025</td>
+                      <td>27/01/2025</td>
+                      <td>29/01/2025</td>
+                      <td>COA</td>
+                      <td>Banjarmasin - Makassar</td>
+                      <td>Solar</td>
+                      <td>50,000 KL</td>
+                      <td>$20.8</td>
+                      <td>$1.04M</td>
+                      <td><strong class="text-green-600">11%</strong></td>
+                    </tr>
+                    <tr>
+                      <td>5</td>
+                      <td><span class="status-badge status-subs">On Subs</span></td>
+                      <td>MT Echo</td>
+                      <td>PT Chevron</td>
+                      <td><strong>75%</strong></td>
+                      <td>Revised Offer</td>
+                      <td>30/01/2025</td>
+                      <td>—</td>
+                      <td>03/02/2025</td>
+                      <td>05/02/2025</td>
+                      <td>Spot</td>
+                      <td>Cilacap - Balikpapan</td>
+                      <td>Crude Oil</td>
+                      <td>80,000 KL</td>
+                      <td>$26.3</td>
+                      <td>$2.10M</td>
+                      <td><strong class="text-green-600">9%</strong></td>
+                    </tr>
+                    <tr>
+                      <td>6</td>
+                      <td><span class="status-badge status-offer">Offer Sent</span></td>
+                      <td>MT Foxtrot</td>
+                      <td>PT Medco</td>
+                      <td><strong>60%</strong></td>
+                      <td>Waiting Response</td>
+                      <td>10/02/2025</td>
+                      <td>—</td>
+                      <td>12/02/2025</td>
+                      <td>14/02/2025</td>
+                      <td>COA</td>
+                      <td>Dumai - Balongan</td>
+                      <td>Diesel</td>
+                      <td>35,000 KL</td>
+                      <td>$19.8</td>
+                      <td>$693K</td>
+                      <td><strong class="text-green-600">8%</strong></td>
+                    </tr>
+                    <tr>
+                      <td>7</td>
+                      <td><span class="status-badge status-done">Done</span></td>
+                      <td>MT Golf</td>
+                      <td>PT KPI</td>
+                      <td><strong>100%</strong></td>
+                      <td>Delivered</td>
+                      <td>15/02/2025</td>
+                      <td>20/02/2025</td>
+                      <td>17/02/2025</td>
+                      <td>19/02/2025</td>
+                      <td>Spot</td>
+                      <td>Balikpapan - Surabaya</td>
+                      <td>Crude Oil</td>
+                      <td>55,000 KL</td>
+                      <td>$24.0</td>
+                      <td>$1.32M</td>
+                      <td><strong class="text-green-600">13%</strong></td>
+                    </tr>
+                    <tr>
+                      <td>8</td>
+                      <td><span class="status-badge status-subs">On Subs</span></td>
+                      <td>MT Hotel</td>
+                      <td>PT Shell</td>
+                      <td><strong>85%</strong></td>
+                      <td>Documents Pending</td>
+                      <td>18/02/2025</td>
+                      <td>—</td>
+                      <td>20/02/2025</td>
+                      <td>22/02/2025</td>
+                      <td>COA</td>
+                      <td>Surabaya - Balikpapan</td>
+                      <td>Diesel</td>
+                      <td>70,000 KL</td>
+                      <td>$21.5</td>
+                      <td>$1.51M</td>
+                      <td><strong class="text-green-600">10%</strong></td>
+                    </tr>
+                    <tr>
+                      <td>9</td>
+                      <td><span class="status-badge status-offer">Offer Sent</span></td>
+                      <td>MT India</td>
+                      <td>PT Total</td>
+                      <td><strong>65%</strong></td>
+                      <td>Follow-up</td>
+                      <td>22/02/2025</td>
+                      <td>—</td>
+                      <td>24/02/2025</td>
+                      <td>26/02/2025</td>
+                      <td>Spot</td>
+                      <td>Pontianak - Tanjung Priok</td>
+                      <td>Pertamax</td>
+                      <td>38,000 KL</td>
+                      <td>$25.0</td>
+                      <td>$950K</td>
+                      <td><strong class="text-green-600">12%</strong></td>
+                    </tr>
+                    <tr>
+                      <td>10</td>
+                      <td><span class="status-badge status-lift">Lift Subs</span></td>
+                      <td>MT Juliet</td>
+                      <td>PT Medco</td>
+                      <td><strong>88%</strong></td>
+                      <td>Preparing Docs</td>
+                      <td>28/02/2025</td>
+                      <td>10/03/2025</td>
+                      <td>01/03/2025</td>
+                      <td>03/03/2025</td>
+                      <td>COA</td>
+                      <td>Balikpapan - Banjarmasin</td>
+                      <td>Solar</td>
+                      <td>48,000 KL</td>
+                      <td>$20.5</td>
+                      <td>$987K</td>
+                      <td><strong class="text-green-600">11%</strong></td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
-
-              <div class="bg-white rounded-xl p-4 card-shadow">
-                <div class="text-sm font-semibold text-[#001f3f] mb-2">Commodity Trend</div>
-                <canvas id="chartCommodity" style="height:220px"></canvas>
-              </div>
-
-              <div class="bg-white rounded-xl p-4 card-shadow">
-                <div class="text-sm font-semibold text-[#001f3f] mb-2">Opportunity Alerts</div>
-                <div id="opAlerts" class="text-sm text-gray-600">No auto-opportunities detected in current dataset. Connect monthly reports to enable alerts.</div>
-              </div>
             </div>
           </div>
 
-          <!-- VOYAGE (unchanged) -->
-          <div id="tab-voyage" class="tab-content hidden card rounded-2xl p-5" data-tab="voyage">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-lg font-bold text-[#001f3f]">Voyage Calculation</h3>
-              <div class="text-sm text-gray-500">Simple calculator & sample voyages</div>
+          <!-- TAB OPERATION -->
+          <div id="tab-operation" class="tab-content hidden card rounded-2xl p-6 bg-white" data-tab="operation">
+            <h3 class="text-lg font-bold text-[#001f3f] mb-6">Operational — September 2025</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-5 border border-blue-200 card-shadow">
+                <div class="text-sm text-gray-600 font-semibold mb-2">Total Vessels</div>
+                <div class="text-3xl font-extrabold text-blue-600">13</div>
+                <div class="text-xs text-gray-600 mt-2">Active Fleet</div>
+              </div>
+              <div
+                class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-5 border border-green-200 card-shadow">
+                <div class="text-sm text-gray-600 font-semibold mb-2">Total Shipments</div>
+                <div class="text-3xl font-extrabold text-green-600">17</div>
+                <div class="text-xs text-gray-600 mt-2">Sept 2025</div>
+              </div>
+              <div
+                class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-5 border border-orange-200 card-shadow">
+                <div class="text-sm text-gray-600 font-semibold mb-2">Avg Commercial Days</div>
+                <div class="text-3xl font-extrabold text-orange-600">343</div>
+                <div class="text-xs text-gray-600 mt-2">Freight + Charter</div>
+              </div>
+              <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-5 border border-red-200 card-shadow">
+                <div class="text-sm text-gray-600 font-semibold mb-2">On-Time Perf</div>
+                <div class="text-3xl font-extrabold text-red-600">94.2%</div>
+                <div class="text-xs text-gray-600 mt-2">Delivery Rate</div>
+              </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4">
-              <div class="bg-white rounded-xl p-4 card-shadow">
-                <div class="text-sm font-semibold text-[#001f3f] mb-2">Voyage Calculator</div>
-                <label class="text-xs text-gray-500">Freight Income (USD)</label>
-                <input id="voyageRevenue" type="number" class="w-full border rounded-md px-3 py-2 mt-1 mb-2"/>
-                <label class="text-xs text-gray-500">Fuel Cost (USD)</label>
-                <input id="voyageFuel" type="number" class="w-full border rounded-md px-3 py-2 mt-1 mb-2"/>
-                <label class="text-xs text-gray-500">Port & Others (USD)</label>
-                <input id="voyagePort" type="number" class="w-full border rounded-md px-3 py-2 mt-1 mb-3"/>
-                <div class="flex gap-2">
-                  <button id="calcVoyageBtn" class="px-3 py-2 bg-[#001f3f] text-white rounded-md">Calculate</button>
-                  <button id="clearVoyageBtn" class="px-3 py-2 border rounded-md">Clear</button>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <div class="bg-white rounded-xl p-6 card-shadow border">
+                <h4 class="text-base font-bold text-[#001f3f] mb-4">Shipment Profile (Sept 2025)</h4>
+                <div class="relative h-80"><canvas id="shipmentChart"></canvas></div>
+                <div class="text-xs text-gray-500 mt-3 p-3 bg-blue-50 rounded-lg">
+                  <span class="font-semibold text-[#001f3f]">Insight:</span> PIS Mahakam dan Kakap memiliki jumlah
+                  shipment tertinggi dengan 4 voyage masing-masing. Total 17 shipment di September 2025.
                 </div>
-                <div id="voyageResult" class="mt-3 text-sm text-gray-600"></div>
               </div>
-
-              <div class="bg-white rounded-xl p-4 card-shadow">
-                <div class="text-sm font-semibold text-[#001f3f] mb-2">Sample Voyages</div>
-                <ul class="text-sm text-gray-600 list-disc ml-5">
-                  <li>MT Kakap — Cilacap–Jakarta — Cargo 4,398 MT</li>
-                  <li>Transko Bima — Dumai–Gresik — Asphalt 6,439 MT</li>
-                  <li>FSO Abherka — Poleng — Crude 13,511 KL</li>
-                </ul>
+              <div class="bg-white rounded-xl p-6 card-shadow border">
+                <h4 class="text-base font-bold text-[#001f3f] mb-4">Volume Terangkut (KL) — YTD 2025</h4>
+                <div class="relative h-80"><canvas id="volumeChart"></canvas></div>
+                <div class="text-xs text-gray-500 mt-3 p-3 bg-green-50 rounded-lg">
+                  <span class="font-semibold text-[#001f3f]">Insight:</span> Volume terangkut mencapai 390.4 KL di
+                  September 2025, dengan tren yang stabil sepanjang tahun.
+                </div>
               </div>
+            </div>
 
-              <div class="bg-white rounded-xl p-4 card-shadow col-span-2">
-                <div class="text-sm font-semibold text-[#001f3f] mb-2">Voyage KPI & Notes</div>
-                <div class="text-sm text-gray-600">Voyage Profit = Freight Income − Voyage Cost. Fuel Efficiency = Cargo Volume / Fuel Used. Integrate COA/Cost data for full automation.</div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <div class="bg-white rounded-xl p-6 card-shadow border">
+                <h4 class="text-base font-bold text-[#001f3f] mb-4">Commercial Days — YTD 2025</h4>
+                <div class="relative h-80"><canvas id="commChart"></canvas></div>
+                <div class="text-xs text-gray-500 mt-3 p-3 bg-orange-50 rounded-lg">
+                  <span class="font-semibold text-[#001f3f]">Insight:</span> Freight Domestic mendominasi dengan
+                  rata-rata 247 hari per bulan, sementara Charter Out stabil di 112 hari.
+                </div>
+              </div>
+              <div class="bg-white rounded-xl p-6 card-shadow border">
+                <h4 class="text-base font-bold text-[#001f3f] mb-4">Freight Import & Export</h4>
+                <div class="relative h-80"><canvas id="freightChart"></canvas></div>
+                <div class="text-xs text-gray-500 mt-3 p-3 bg-purple-50 rounded-lg">
+                  <span class="font-semibold text-[#001f3f]">Insight:</span> Kuartal I mencatat realisasi tertinggi
+                  dengan 4 shipment, melampaui target KPI sebesar 300%.
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-xl p-6 card-shadow border mb-8">
+              <h4 class="text-base font-bold text-[#001f3f] mb-4">DWT Charter Out — KPI vs Realisasi</h4>
+              <div class="relative h-96"><canvas id="dwtChart"></canvas></div>
+              <div class="text-xs text-gray-500 mt-3 p-3 bg-indigo-50 rounded-lg">
+                <span class="font-semibold text-[#001f3f]">Insight:</span> FSO Aberkha memiliki KPI target 136,000 DWT
+                namun realisasi 88,260 (65%). TST Fastron, STS Sengepti, dan STS Sanga mencatat performa baik meski
+                tanpa target KPI formal.
+              </div>
+            </div>
+
+            <div class="bg-white rounded-xl p-6 card-shadow border mb-8">
+              <div class="flex items-center justify-between mb-4">
+                <h4 class="text-lg font-bold text-[#001f3f]">Operasional Kapal — September 2025</h4>
+                <button id="exportVesselTable"
+                  class="text-sm px-4 py-2 bg-gradient-to-r from-[#001f3f] to-[#b71c1c] text-white rounded-lg hover:shadow-lg transition">
+                  Export to CSV
+                </button>
+              </div>
+              <div class="overflow-x-auto better-scroll">
+                <table class="modern-table">
+                  <thead>
+                    <tr>
+                      <th>No</th>
+                      <th>Nama Kapal</th>
+                      <th>Cargo</th>
+                      <th>Tipe</th>
+                      <th class="text-center">YOB</th>
+                      <th>Kontrak</th>
+                      <th>Owner</th>
+                      <th>Ship MGMT</th>
+                      <th class="text-right">Jumlah Unit</th>
+                      <th class="text-center">Shipment</th>
+                      <th>Loading Port</th>
+                      <th>Discharge Port</th>
+                      <th class="text-right">Comm. Days</th>
+                      <th class="text-right">Comm'l Days</th>
+                    </tr>
+                  </thead>
+                  <tbody id="vesselTableBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-xl p-6 card-shadow border">
+              <h4 class="text-lg font-bold text-[#001f3f] mb-4">Operational Issues — September 2025</h4>
+              <div class="space-y-4">
+                <div
+                  class="border-l-4 border-green-500 pl-5 py-4 bg-green-50 rounded-lg hover:shadow-md transition-shadow">
+                  <div class="flex justify-between items-start flex-wrap gap-3">
+                    <div class="flex-1">
+                      <div class="font-bold text-gray-900 mb-2">Kendala Hilangnya Daun Kemudi MT Transko Bima</div>
+                      <div class="text-sm text-gray-700 mb-2">
+                        Deviasi ke Tanjung Intan untuk perbaikan darurat. Dampak operasional minimal dengan jadwal
+                        discharge tertunda.
+                      </div>
+                      <div class="text-xs text-gray-600">
+                        <strong>Timeline Discharge:</strong> 5 Sept (1.100 MT) • 19-20 Sept (1.000 MT) • 3-4 Okt (1.000
+                        MT)
+                      </div>
+                    </div>
+                    <span class="status-badge status-resolved">RESOLVED</span>
+                  </div>
+                </div>
+
+                <div
+                  class="border-l-4 border-green-500 pl-5 py-4 bg-green-50 rounded-lg hover:shadow-md transition-shadow">
+                  <div class="flex justify-between items-start flex-wrap gap-3">
+                    <div class="flex-1">
+                      <div class="font-bold text-gray-900 mb-2">Kegagalan Lifting MT Erawan 12</div>
+                      <div class="text-sm text-gray-700 mb-2">
+                        Tank cleaning belum memenuhi standar keamanan untuk jenis cargo yang akan dimuat.
+                      </div>
+                      <div class="text-xs text-gray-600">
+                        <strong>Mitigasi:</strong> Perubahan rute MT Griya Bugis untuk menggantikan MT Erawan 12 •
+                        Status cleaning diperbaiki
+                      </div>
+                    </div>
+                    <span class="status-badge status-resolved">RESOLVED</span>
+                  </div>
+                </div>
+
+                <div
+                  class="border-l-4 border-green-500 pl-5 py-4 bg-green-50 rounded-lg hover:shadow-md transition-shadow">
+                  <div class="flex justify-between items-start flex-wrap gap-3">
+                    <div class="flex-1">
+                      <div class="font-bold text-gray-900 mb-2">Kegagalan Shipment Paraxylene Laycan 29-30 Sept</div>
+                      <div class="text-sm text-gray-700 mb-2">
+                        MT Golden Fortune LX tidak tiba sesuai jadwal laycan yang telah ditentukan.
+                      </div>
+                      <div class="text-xs text-gray-600">
+                        <strong>Detail:</strong> Kontrak berakhir 30 September 2025 • Koordinasi ulang dengan vendor
+                        untuk kontrak baru
+                      </div>
+                    </div>
+                    <span class="status-badge status-resolved">RESOLVED</span>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                <div class="flex items-start gap-3">
+                  <div class="text-2xl">📊</div>
+                  <div>
+                    <div class="font-bold text-[#001f3f] mb-1">Summary Operational Performance</div>
+                    <div class="text-sm text-gray-700">
+                      Dari 3 isu operasional di September 2025, semuanya telah berhasil diselesaikan dengan
+                      mitigasi yang efektif.
+                      On-time delivery rate tetap terjaga di <strong class="text-red-600">94.2%</strong> dan fleet
+                      utilization
+                      mencapai <strong class="text-green-600">87.3%</strong>.
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </section>
 
-        <!-- RIGHT column: charts & small cards (kecepatan dan ukuran sedikit diperkecil) -->
-        <aside class="col-span-5 flex flex-col gap-6">
-          <div class="bg-white rounded-xl p-4 card-shadow">
-            <div class="flex items-center justify-between">
-              <div>
-                <div class="text-xs text-gray-500">Total Revenue</div>
-                <div id="sideRevenue" class="text-2xl font-bold">$23.35M</div>
+          <!-- TAB MARKET -->
+          <div id="tab-market" class="tab-content hidden card rounded-2xl p-5 bg-white" data-tab="market">
+            <h3 class="text-lg font-bold text-[#001f3f]">Market Research</h3>
+            <p class="text-sm text-gray-600 mt-2 mb-4">Input and manage latest market data and analysis below.</p>
+
+            <!-- FORM INPUT DATA -->
+            <div class="space-y-3 border border-gray-200 rounded-xl p-4 mb-5">
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- Business Stream -->
+                <div>
+                  <label class="block text-sm font-semibold text-[#001f3f] mb-1">Business Stream</label>
+                  <select id="businessStream"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#001f3f] focus:outline-none">
+                    <option value="">Select Stream</option>
+                    <option value="Chemical Market">Chemical Market</option>
+                    <option value="Dry Bulk Market: Average Bulkcarrier Earnings ($, 000’s/day)">Dry Bulk Market:
+                      Average Bulkcarrier Earnings ($, 000’s/day)</option>
+                    <option value="Dry Bulk Market: Bulkcarrier Timecharter Rates ($,000’s/day) & Asset Markets">Dry
+                      Bulk Market: Bulkcarrier Timecharter Rates ($,000’s/day) & Asset Markets</option>
+                  </select>
+                </div>
+
+                <!-- Source -->
+                <div>
+                  <label class="block text-sm font-semibold text-[#001f3f] mb-1">Source</label>
+                  <input id="sourceInput" type="text" placeholder="Enter source or link"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#001f3f] focus:outline-none" />
+                </div>
+
+                <!-- Market Analysis -->
+                <div>
+                  <label class="block text-sm font-semibold text-[#001f3f] mb-1">Market Analysis</label>
+                  <textarea id="marketAnalysis" rows="1" placeholder="Write market analysis..."
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#001f3f] focus:outline-none"></textarea>
+                </div>
+
+                <!-- Update (Date) -->
+                <div>
+                  <label class="block text-sm font-semibold text-[#001f3f] mb-1">Update (Date)</label>
+                  <input id="updateDate" type="date"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#001f3f] focus:outline-none" />
+                </div>
               </div>
-              <div>
-                <div class="text-xs text-gray-500">Collection Rate</div>
-                <div id="sideCollection" class="text-2xl font-bold">50.57%</div>
+
+              <!-- Action Buttons -->
+              <div class="flex items-center justify-between mt-4">
+                <div class="flex gap-3">
+                  <button id="addDataBtn"
+                    class="bg-[#001f3f] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#003366] transition">+
+                    Add</button>
+                  <label for="uploadImage"
+                    class="cursor-pointer bg-gray-100 text-[#001f3f] px-4 py-2 rounded-lg text-sm hover:bg-gray-200 transition">Upload
+                    Image</label>
+                  <input id="uploadImage" type="file" accept="image/*" class="hidden" />
+                </div>
               </div>
             </div>
-            <div class="mt-3">
-              <canvas id="sideSpark" style="height:72px"></canvas>
+
+            <!-- TABLE DATA -->
+            <div class="overflow-x-auto mt-5">
+              <table class="min-w-full text-sm text-left border border-gray-200 rounded-xl">
+                <thead class="bg-[#001f3f] text-white">
+                  <tr>
+                    <th class="px-4 py-2 rounded-tl-xl">Business Stream</th>
+                    <th class="px-4 py-2">Source</th>
+                    <th class="px-4 py-2">Market Analysis</th>
+                    <th class="px-4 py-2">Update (Date)</th>
+                    <th class="px-4 py-2 rounded-tr-xl">Image</th>
+                  </tr>
+                </thead>
+                <tbody id="marketTableBody" class="text-gray-700">
+                  <tr class="text-center">
+                    <td colspan="5" class="py-3 text-gray-400 italic">No data added yet.</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
-          <div class="bg-white rounded-xl p-4 card-shadow">
-            <div class="flex items-center justify-between mb-2">
-              <div class="text-sm font-semibold text-[#001f3f]">Revenue Trend</div>
-              <div class="text-xs text-gray-400">Monthly</div>
-            </div>
-            <canvas id="chartRevenueTrend" style="height:140px"></canvas>
-          </div>
+          <script>
+            const addDataBtn = document.getElementById("addDataBtn");
+            const marketTableBody = document.getElementById("marketTableBody");
+            const uploadImage = document.getElementById("uploadImage");
 
-          <div class="bg-white rounded-xl p-4 card-shadow">
-            <div class="text-sm font-semibold text-[#001f3f] mb-2">Operational Snapshot</div>
-            <div class="flex gap-2 flex-wrap">
-              <div class="px-3 py-2 bg-gray-100 rounded-full text-sm">4 Owned/TC</div>
-              <div class="px-3 py-2 bg-gray-100 rounded-full text-sm">2 Spot/COA</div>
-              <div class="px-3 py-2 bg-gray-100 rounded-full text-sm">4 FSO/STS</div>
-              <div class="px-3 py-2 bg-gray-100 rounded-full text-sm">Docking: MT Kakap (15 Jul–9 Aug)</div>
-            </div>
-          </div>
+            let uploadedImage = null;
 
-          <div class="bg-white rounded-xl p-4 card-shadow">
-            <div class="text-sm font-semibold text-[#001f3f] mb-2">AI Insights</div>
-            <ul id="aiInsights" class="text-sm text-gray-600 list-disc ml-5">
-              <li>Collection rate turun vs 2024 (2024: 94.66%). Fokus penagihan ke COA Domestik, PX, Caustic Soda.</li>
-              <li>Top revenue drivers: COA Domestik, FOB LBO, FSO Abherka.</li>
-              <li>Operasional: semua vessel tanpa incident, HSSE 100%.</li>
-            </ul>
-          </div>
-        </aside>
-      </div>
-    </main>
-  </div>
+            uploadImage.addEventListener("change", (e) => {
+              const file = e.target.files[0];
+              if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                  uploadedImage = event.target.result;
+                };
+                reader.readAsDataURL(file);
+              }
+            });
 
-  <!-- SCRIPTS: memasukkan semua data P/L yang kamu kirim + visual -->
-  <script>
-  // ---------- Data (dimasukkan lengkap sesuai request)
-  // P/L per segment (data dari user message)
-  const plData = [
-    { produk: "Asphalt", RKAP2025: 4.62, RKAP_YTD_Juli: 2.56, Real_YTD_Juli: 3.33, Delta_USD: 0.77, DeltaPct: 30, status: "🟢" },
-    { produk: "FAME", RKAP2025: 2.59, RKAP_YTD_Juli: 2.43, Real_YTD_Juli: 2.44, Delta_USD: 0.01, DeltaPct: 1, status: "🟢" },
-    { produk: "FSO", RKAP2025: 9.18, RKAP_YTD_Juli: 5.33, Real_YTD_Juli: 5.34, Delta_USD: 0.01, DeltaPct: 0.1, status: "🟢" },
-    { produk: "LBO", RKAP2025: 10.99, RKAP_YTD_Juli: 6.36, Real_YTD_Juli: 4.43, Delta_USD: -1.93, DeltaPct: -30, status: "🔴" },
-    { produk: "Methanol", RKAP2025: 1.93, RKAP_YTD_Juli: 1.13, Real_YTD_Juli: 0.00, Delta_USD: -1.13, DeltaPct: -100, status: "🔴" },
-    { produk: "Other", RKAP2025: 1.56, RKAP_YTD_Juli: 0.26, Real_YTD_Juli: 2.98, Delta_USD: 2.71, DeltaPct: 83, status: "🟢" },
-    { produk: "Paraxylene", RKAP2025: 2.82, RKAP_YTD_Juli: 1.65, Real_YTD_Juli: 3.05, Delta_USD: 1.40, DeltaPct: 83, status: "🟢" },
-    { produk: "Solvent", RKAP2025: 0.28, RKAP_YTD_Juli: 0.14, Real_YTD_Juli: 0.20, Delta_USD: 0.06, DeltaPct: 42, status: "🟢" },
-    { produk: "Caustic Soda", RKAP2025: 3.07, RKAP_YTD_Juli: 1.15, Real_YTD_Juli: 1.63, Delta_USD: 0.48, DeltaPct: 42, status: "🟢" },
-    { produk: "Dry Bulk", RKAP2025: 8.68, RKAP_YTD_Juli: 4.36, Real_YTD_Juli: 0.64, Delta_USD: -3.71, DeltaPct: -85, status: "🔴" },
-    { produk: "Asam Sulfat - Asam Fosfat", RKAP2025: 0.42, RKAP_YTD_Juli: 0.21, Real_YTD_Juli: 0.00, Delta_USD: -0.21, DeltaPct: -100, status: "🔴" }
-  ];
+            addDataBtn.addEventListener("click", () => {
+              const businessStream = document.getElementById("businessStream").value;
+              const sourceInput = document.getElementById("sourceInput").value.trim();
+              const marketAnalysis = document.getElementById("marketAnalysis").value.trim();
+              const updateDate = document.getElementById("updateDate").value;
 
-  // Volume data (juta KL)
-  const volumeData = [
-    { produk:"Asphalt", target:0.05, real:0.05, pct:6.7 },
-    { produk:"LBO", target:0.320, real:0.240, pct:-25.0 },
-    { produk:"FAME", target:0.61, real:1.36, pct:122.8 },
-    { produk:"Methanol", target:0.04, real:0.00, pct:-100.0 },
-    { produk:"Paraxylene", target:0.13, real:0.24, pct:84.6 },
-    { produk:"Solvent", target:0.002, real:0.003, pct:50.0 },
-    { produk:"Dry Bulk", target:0.390, real:0.070, pct:-82.1 },
-    { produk:"Caustic Soda", target:0.03, real:0.04, pct:33.3 },
-    { produk:"Others", target:0.01, real:0.09, pct:542.9 }
-  ];
+              if (!businessStream || !sourceInput || !marketAnalysis || !updateDate) {
+                alert("Please fill in all fields before adding data.");
+                return;
+              }
 
-  // PnB top-level KPIs (kept from prior)
-  const initialPnB = {
-    TotalRevenue: 45960000, // RKAP 2025 in USD thousands? using 45.96 juta USD = 45.96M
-    Collected: 23347974.36, // earlier sample
-    Outstanding: 11542048.50,
-    CollectionRate: 50.57,
-    ConversionRate: 36,
-    TotalOpportunities: 50,
-    Awarded: 18,
-    Failed: 27,
-    OnProgress: 5
-  };
+              const newRow = document.createElement("tr");
+              newRow.classList.add("border-t", "border-gray-200");
+              newRow.innerHTML = `
+      <td class="px-4 py-2">${businessStream}</td>
+      <td class="px-4 py-2"><a href="${sourceInput}" target="_blank" class="text-blue-600 underline">${sourceInput}</a></td>
+      <td class="px-4 py-2">${marketAnalysis}</td>
+      <td class="px-4 py-2">${updateDate}</td>
+      <td class="px-4 py-2">${uploadedImage ? `<img src="${uploadedImage}" alt="Uploaded" class="h-12 w-12 object-cover rounded-lg border border-gray-300" />` : "-"}</td>
+    `;
 
-  let SalesOpportunityData = [
-    {No:1, Status:'Awarded', Vessel:'MT TBN Small II', Account:'PT KPI', Cargo:'Paraxylene', Volume:'5,000 MT / shipment', Freight:'23.5 USD/MT', Margin:'9.3%'},
-    {No:2, Status:'Awarded', Vessel:'MT Griya Bugis', Account:'PT PL', Cargo:'LBO', Volume:'1,900 MT', Freight:'IDR 1,701,000,000', Margin:''},
-    {No:3, Status:'Failed', Vessel:'PIS Mahakam', Account:'PT HTK', Cargo:'Methanol', Volume:'', Freight:'', Margin:''},
-    {No:21, Status:'Awarded', Vessel:'MT Transko Bima', Account:'PT PPN', Cargo:'Asphalt', Volume:'3,800 MT', Freight:'127,000 USD', Margin:'7.31%'}
-  ];
+              // Hapus placeholder row jika ada
+              if (marketTableBody.querySelector("td[colspan='5']")) {
+                marketTableBody.innerHTML = "";
+              }
 
-  let PnB = { ...initialPnB };
+              marketTableBody.appendChild(newRow);
 
-  // ---------- Helpers (kept names from original)
-  const $ = id => document.getElementById(id);
-  const fmtUSD = n => {
-    if (n === null || n === undefined) return '-';
-    const x = Number(n);
-    if (isNaN(x)) return n;
-    if (Math.abs(x) >= 1000000) return '$' + (x/1000000).toFixed(2) + 'M';
-    return '$' + x.toLocaleString('en-US');
-  };
+              // Reset form setelah tambah
+              document.getElementById("businessStream").value = "";
+              document.getElementById("sourceInput").value = "";
+              document.getElementById("marketAnalysis").value = "";
+              document.getElementById("updateDate").value = "";
+              uploadImage.value = "";
+              uploadedImage = null;
+            });
+          </script>
 
-  // ---------- Render Top KPIs (kept same)
-  function renderTopKPIs(){
-    $('kpiTotalRevenue').innerText = fmtUSD(PnB.TotalRevenue);
-    $('kpiCollectionRate').innerText = (PnB.CollectionRate ?? 0).toFixed(2) + '%';
-    $('kpiOutstanding').innerText = fmtUSD(PnB.Outstanding);
-    $('kpiConversion').innerText = (PnB.ConversionRate ?? 0) + '%';
-    $('revenueValue').innerText = fmtUSD(PnB.TotalRevenue);
-    $('collectionValue').innerText = (PnB.CollectionRate ?? 0) + '%';
-    $('sideRevenue').innerText = fmtUSD(PnB.TotalRevenue);
-    $('sideCollection').innerText = (PnB.CollectionRate ?? 0) + '%';
-    $('profitValue').innerText = fmtUSD((PnB.TotalRevenue - 9700000)); // sample profit calc
-    $('lastUpdate').innerText = new Date().toLocaleString();
-  }
 
-  // ---------- Render Opportunity Table
-  function renderOpportunityTable(){
-    const tbody = $('oppTableBody');
-    tbody.innerHTML = '';
-    SalesOpportunityData.forEach(row => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="px-3 py-2">${row.No ?? ''}</td>
-        <td class="px-3 py-2">${row.Status ?? ''}</td>
-        <td class="px-3 py-2 font-semibold">${row.Vessel ?? ''}</td>
-        <td class="px-3 py-2">${row.Account ?? ''}</td>
-        <td class="px-3 py-2">${row.Cargo ?? ''}</td>
-        <td class="px-3 py-2">${row.Volume ?? ''}</td>
-        <td class="px-3 py-2">${row.Freight ?? row.FreightRate ?? ''}</td>
-        <td class="px-3 py-2">${row.Margin ?? ''}</td>
+          <script>
+            // DATA LAYER
+            const DATA = {
+              plSummary: {
+                labels: ['Revenue', 'Cost', 'P/L'],
+                rkap: [34.0, 28.1, 5.9],
+                real: [30.3, 26.0, 4.3],
+                plDeviation: -27.50,
+                revenueDeviation: ((30.3 - 34.0) / 34.0) * 100,
+                costDeviation: ((26.0 - 28.1) / 28.1) * 100
+              },
+              plProducts: [
+                { produk: 'Asphalt', revenue: 3.9, cost: 3.4, pl: 0.5 },
+                { produk: 'FAME', revenue: 3.4, cost: 3.3, pl: -0.4 },
+                { produk: 'FSO Aberkha & Fastron', revenue: 6.9, cost: 5.2, pl: 1.7 },
+                { produk: 'LBO', revenue: 5.7, cost: 4.5, pl: 1.2 },
+                { produk: 'Methanol', revenue: 0, cost: 0, pl: 0 },
+                { produk: 'Other', revenue: 3.6, cost: 3, pl: 0.6 },
+                { produk: 'Paraxylene', revenue: 4.3, cost: 3.7, pl: 0.7 },
+                { produk: 'Solvent', revenue: 0.3, cost: 0.3, pl: 0 },
+                { produk: 'Caustic Soda', revenue: 1.6, cost: 1.6, pl: 0.1 },
+                { produk: 'Dry Bulk', revenue: 0.6, cost: 0.6, pl: 0.1 }
+              ],
+              customers: [
+                { customer: 'PPN', nilai: 7670174, persentase: 26 },
+                { customer: 'KPI', nilai: 4315253, persentase: 14 },
+                { customer: 'PTPL', nilai: 5646947, persentase: 19 },
+                { customer: 'PTS', nilai: 668489, persentase: 2 },
+                { customer: 'PPT', nilai: 846976, persentase: 3 },
+                { customer: 'PTK', nilai: 3318068, persentase: 11 },
+                { customer: 'PHE', nilai: 4927650, persentase: 17 },
+                { customer: 'PEB', nilai: 1944140, persentase: 6 },
+                { customer: 'PT KP', nilai: 465485, persentase: 2 }
+              ],
+              operation: {
+                shipments: {
+                  labels: ['Elizabeth I', 'Transko Aquila', 'Kakap', 'Erawan 12', 'PIS Mahakam', 'SC Golden Fortune LX', 'Transko Bima', 'Bitumen Shouri', 'Griya Bugis'],
+                  data: [1, 3, 4, 1, 4, 1, 1, 1, 1]
+                },
+                volume: {
+                  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+                  data: [356.1, 397.3, 391.1, 332.9, 344.3, 340.7, 268.5, 381.3, 390.4]
+                },
+                commercialDays: {
+                  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+                  freight: [254.19, 223, 288.52, 221.57, 281.81, 229.43, 254.76, 244.12, 223.09],
+                  charter: [24, 112, 134.5, 120, 124, 120, 120, 124, 120]
+                },
+                dwtCharterOut: {
+                  kpi: { 'FSO Aberkha': 136000, 'TST Fastron': 0, 'STS Sengepti': 0, 'STS Sanga': 0 },
+                  real: { 'FSO Aberkha': 88260, 'TST Fastron': 30770, 'STS Sengepti': 29952, 'STS Sanga': 29944 }
+                },
+                freightImportExport: {
+                  labels: ['I', 'II', 'III', 'IV'],
+                  kpi: [1, 1, 1, 1],
+                  real: [4, 2, 2, 0]
+                },
+                vessels: [
+                  { no: 1, nama: 'PIS Mahakam', cargo: 'COA Paraxylene', tipe: 'Small II', yob: 2008, kontrak: 'Milik', owner: 'PIS', shipMgmt: 'PIS', unit: '21.644 MT', shipment: 4, loading: 'Tuban, Cilacap', discharge: 'Merak', commission: 30, commercial: 30 },
+                  { no: 2, nama: 'Kakap', cargo: 'LBO COA', tipe: 'Small II', yob: 2012, kontrak: 'Milik', owner: 'PIS', shipMgmt: 'PIS', unit: '16.635 MT', shipment: 4, loading: 'Cilacap', discharge: 'Jakarta', commission: 30, commercial: 30 },
+                  { no: 3, nama: 'Transko Aquila', cargo: 'COA Domestik', tipe: 'Small I', yob: 2001, kontrak: 'BBTC', owner: 'PTK', shipMgmt: 'PIS', unit: '7.839 KL', shipment: 3, loading: 'Tg Mangis, Maumere', discharge: 'Kalabahi, Ende, Badas', commission: 30, commercial: 30 },
+                  { no: 4, nama: 'Transko Bima', cargo: 'Asphalt Spot', tipe: 'Small I', yob: 2008, kontrak: 'BBTC', owner: 'PTK', shipMgmt: 'PIS', unit: '3.104 MT', shipment: 1, loading: 'Cilacap', discharge: 'Tg. Intan', commission: 1.2, commercial: 4 },
+                  { no: 5, nama: 'SC Golden Fortune LX', cargo: 'COA Paraxylene', tipe: 'Small II', yob: 2000, kontrak: 'Spot', owner: 'Armada Bumi Pratiwi Lines', shipMgmt: 'Sukses Inkor Maritim', unit: '4.735 MT', shipment: 1, loading: 'Cilacap', discharge: 'Merak', commission: 6.6, commercial: 4 },
+                  { no: 6, nama: 'Erawan 12', cargo: 'Paraxylene COA', tipe: 'Small II', yob: 2003, kontrak: 'Spot', owner: 'Chandra Shipping International Pte. Ltd.', shipMgmt: 'Arcadia Shipping', unit: '5.507 MT', shipment: 1, loading: 'Cilacap', discharge: 'Merak', commission: 6.8, commercial: 7 },
+                  { no: 7, nama: 'Elizabeth I', cargo: 'Asphalt COA', tipe: 'BL', yob: 2009, kontrak: 'Spot', owner: 'Aspindo Bahana Luas', shipMgmt: 'Aspindo Bahana Luas', unit: '1.597 MT', shipment: 1, loading: 'Cilacap', discharge: 'Gresik', commission: 5.6, commercial: 3 },
+                  { no: 8, nama: 'Griya Bugis', cargo: 'LBO Spot', tipe: 'Small I', yob: 1998, kontrak: 'Spot', owner: 'Hutama Trans Kencana', shipMgmt: 'Hutama Trans Kencana', unit: '3.153 MT', shipment: 1, loading: 'Cilacap', discharge: 'Gresik', commission: 6.1, commercial: 2 },
+                  { no: 9, nama: 'Bitumen Shouri', cargo: 'Asphalt Impor Spot', tipe: 'Small I', yob: 2007, kontrak: 'Spot', owner: 'Pelayaran Nasional Lestari', shipMgmt: 'Aeromic Shipping', unit: '2.899 MT', shipment: 1, loading: 'Singapore', discharge: 'Samarinda, Sampit', commission: 14.1, commercial: 4 },
+                  { no: 10, nama: 'Aberkha', cargo: 'FSO Crude', tipe: 'LR', yob: 1985, kontrak: 'Milik', owner: 'PIS', shipMgmt: 'Vships', unit: '13.175 KL', shipment: 'TC out to PHE WMO', loading: 'Poleng', discharge: 'Poleng', commission: 30, commercial: 30 },
+                  { no: 11, nama: 'Fastron', cargo: 'FSO Crude', tipe: 'MR', yob: 2005, kontrak: 'Milik', owner: 'PIS', shipMgmt: 'PIS', unit: '38.310 KL', shipment: 'TC out to PEB', loading: 'Bawean', discharge: 'Bawean', commission: 30, commercial: 30 },
+                  { no: 12, nama: 'Sanga-Sanga Naomi', cargo: 'STS FAME', tipe: 'MR', yob: 1983, kontrak: 'Milik', owner: 'PIS', shipMgmt: 'PIS', unit: '125.215 KL', shipment: 'TC out to PTK', loading: 'Balikpapan', discharge: 'Balikpapan', commission: 30, commercial: 30 },
+                  { no: 13, nama: 'Princess Naomi', cargo: 'STS FAME', tipe: 'MR', yob: 1996, kontrak: 'TC', owner: 'Waruna', shipMgmt: 'Waruna', unit: '144.216 KL', shipment: 'TC out to PTK', loading: 'Balikpapan', discharge: 'Balikpapan', commission: 30, commercial: 30 }
+                ]
+              }
+            };
+
+            // UTILITIES
+            const Utils = {
+              formatCurrency: (val) => {
+                if (val === 0) return '$0M';
+                const abs = Math.abs(val);
+                const sign = val < 0 ? '-' : '';
+                return `${sign}${abs.toFixed(1)}M`;
+              },
+              formatNumber: (val) => val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")
+            };
+
+            // CHARTS
+            const Charts = {
+              instances: {},
+
+              destroyChart: (id) => {
+                if (Charts.instances[id]) {
+                  Charts.instances[id].destroy();
+                  delete Charts.instances[id];
+                }
+              },
+
+              initPLSummary: () => {
+                Charts.destroyChart('plSummaryChart');
+                const ctx = document.getElementById('plSummaryChart').getContext('2d');
+                Charts.instances.plSummaryChart = new Chart(ctx, {
+                  type: 'bar',
+                  data: {
+                    labels: DATA.plSummary.labels,
+                    datasets: [
+                      { type: 'bar', label: 'RKAP YTD Sept 2025', data: DATA.plSummary.rkap, backgroundColor: ['rgba(0,31,63,0.85)', 'rgba(0,31,63,0.6)', 'rgba(0,31,63,0.4)'], borderRadius: 6 },
+                      { type: 'bar', label: 'Realisasi YTD Sept 2025', data: DATA.plSummary.real, backgroundColor: ['rgba(183,28,28,0.85)', 'rgba(183,28,28,0.6)', 'rgba(183,28,28,0.4)'], borderRadius: 6 },
+                      { type: 'line', label: 'P/L (Trend Line)', data: DATA.plSummary.real, borderColor: '#0ea5a4', borderWidth: 2.5, tension: 0.35, pointRadius: 4, pointHoverRadius: 6, yAxisID: 'y', fill: false, order: 3 }
+                    ]
+                  },
+                  options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Nilai (Miliar USD)' } } },
+                    plugins: {
+                      legend: { position: 'top' },
+                      tooltip: {
+                        callbacks: {
+                          label: (ctx) => `${ctx.dataset.label}: ${Utils.formatCurrency(ctx.raw)}`,
+                          afterBody: (ctx) => {
+                            const first = ctx[0];
+                            if (first && first.dataset.label.includes('Realisasi')) {
+                              const idx = first.dataIndex;
+                              if (idx === 0) return `Dev vs RKAP: ${DATA.plSummary.revenueDeviation.toFixed(2)}%`;
+                              if (idx === 1) return `Dev vs RKAP: ${DATA.plSummary.costDeviation.toFixed(2)}%`;
+                              if (idx === 2) return `Dev vs RKAP: ${DATA.plSummary.plDeviation.toFixed(2)}%`;
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                });
+              },
+
+              initPLPerProduct: () => {
+                Charts.destroyChart('plPerProductChart');
+                const labels = DATA.plProducts.map(d => d.produk);
+                const revenue = DATA.plProducts.map(d => d.revenue);
+                const cost = DATA.plProducts.map(d => d.cost);
+                const pl = DATA.plProducts.map(d => d.pl);
+                const ctx = document.getElementById('plPerProductChart').getContext('2d');
+                Charts.instances.plPerProductChart = new Chart(ctx, {
+                  type: 'bar',
+                  data: {
+                    labels: labels,
+                    datasets: [
+                      { label: 'P/L Realisasi (M)', data: pl, backgroundColor: pl.map(v => v >= 0 ? 'rgba(59,130,246,0.9)' : 'rgba(239,68,68,0.9)'), order: 1, borderRadius: 6 },
+                      { label: 'Revenue (M)', data: revenue, backgroundColor: 'rgba(16,163,74,0.45)', stack: 'stack1', order: 2, borderRadius: 6 },
+                      { label: 'Cost (M)', data: cost.map(v => -v), backgroundColor: 'rgba(239,68,68,0.38)', stack: 'stack1', order: 2, borderRadius: 6 }
+                    ]
+                  },
+                  options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { x: { title: { display: true, text: 'Nilai (Miliar USD)' }, ticks: { callback: (val) => Utils.formatCurrency(Number(val)) } } },
+                    plugins: {
+                      legend: { position: 'top' },
+                      tooltip: { callbacks: { label: (ctx) => { let label = ctx.dataset.label || ''; let raw = ctx.raw; if (label.includes('Cost')) raw = -raw; return `${label}: ${Utils.formatCurrency(raw)}`; } } }
+                    }
+                  }
+                });
+              },
+
+              initCustomerPie: () => {
+                Charts.destroyChart('customerPieChart');
+                const labels = DATA.customers.map(d => d.customer);
+                const data = DATA.customers.map(d => d.nilai);
+                const colors = ['#001f3f', '#b71c1c', '#3b82f6', '#10b981', '#f59e0b', '#6366f1', '#ec4899', '#ef4444', '#06b6d4'];
+                const ctx = document.getElementById('customerPieChart').getContext('2d');
+                Charts.instances.customerPieChart = new Chart(ctx, {
+                  type: 'pie',
+                  data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, hoverOffset: 8 }] },
+                  options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: { display: false },
+                      tooltip: { callbacks: { label: (ctx) => { const label = ctx.label || ''; const value = ctx.parsed; const pct = DATA.customers[ctx.dataIndex].persentase; return `${label}: Rp ${Utils.formatNumber(value)} (${pct}%)`; } } }
+                    }
+                  }
+                });
+
+                const legend = document.getElementById('customerLegend');
+                legend.innerHTML = '';
+                DATA.customers.forEach((item, i) => {
+                  const li = document.createElement('div');
+                  li.className = 'bg-white rounded-lg p-3 border hover:shadow-md transition-shadow';
+                  li.innerHTML = `
+        <div class="flex items-center gap-2 mb-1">
+          <span class="inline-block w-3 h-3 rounded-full" style="background-color: ${colors[i]}"></span>
+          <span class="font-semibold text-sm text-gray-800">${item.customer}</span>
+        </div>
+        <div class="text-xs text-gray-500">Rp ${Utils.formatNumber(item.nilai)}</div>
+        <div class="text-xs font-semibold text-blue-600">${item.persentase}% dari total</div>
       `;
-      tbody.appendChild(tr);
-    });
-    $('oppCount').innerText = SalesOpportunityData.length;
+                  legend.appendChild(li);
+                });
 
-    // funnel counts
-    const awarded = SalesOpportunityData.filter(x=>String(x.Status).toLowerCase()==='awarded').length;
-    const failed = SalesOpportunityData.filter(x=>String(x.Status).toLowerCase()==='failed').length;
-    const onprog = SalesOpportunityData.length - awarded - failed;
-    $('awardedCount').innerText = awarded;
-    $('failedCount').innerText = failed;
-    $('onprogCount').innerText = onprog;
-  }
+                const total = DATA.customers.reduce((sum, item) => sum + item.nilai, 0);
+                document.getElementById('totalCustomerRp').textContent = `Rp ${Utils.formatNumber(total)}`;
+                const sorted = [...DATA.customers].sort((a, b) => b.nilai - a.nilai).slice(0, 3).map(x => `${x.customer} (${x.persentase}%)`);
+                document.getElementById('top3').textContent = sorted.join(', ');
+              },
 
-  // ---------- P/L Table render
-  function renderPLTable(){
-    const tbody = $('plTableBody');
-    tbody.innerHTML = '';
-    plData.forEach(r=>{
-      const tr = document.createElement('tr');
-      const deltaClass = (r.DeltaPct >= 0) ? 'green' : 'red';
-      tr.innerHTML = `
-        <td class="px-3 py-2">${r.produk}</td>
-        <td class="px-3 py-2">${r.RKAP2025.toFixed(2)}</td>
-        <td class="px-3 py-2">${r.RKAP_YTD_Juli.toFixed(2)}</td>
-        <td class="px-3 py-2">${r.Real_YTD_Juli.toFixed(2)}</td>
-        <td class="px-3 py-2">${r.Delta_USD.toFixed(2)}</td>
-        <td class="px-3 py-2 ${deltaClass}">${r.DeltaPct}%</td>
-        <td class="px-3 py-2">${r.status}</td>
+              initShipmentChart: () => {
+                Charts.destroyChart('shipmentChart');
+                const ctx = document.getElementById('shipmentChart').getContext('2d');
+                Charts.instances.shipmentChart = new Chart(ctx, {
+                  type: 'bar',
+                  data: {
+                    labels: DATA.operation.shipments.labels,
+                    datasets: [{
+                      label: 'Shipments',
+                      data: DATA.operation.shipments.data,
+                      backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#f97316', '#14b8a6'],
+                      borderRadius: 6
+                    }]
+                  },
+                  options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { beginAtZero: true, title: { display: true, text: 'Jumlah Voyage' } } }
+                  }
+                });
+              },
+
+              initVolumeChart: () => {
+                Charts.destroyChart('volumeChart');
+                const ctx = document.getElementById('volumeChart').getContext('2d');
+                Charts.instances.volumeChart = new Chart(ctx, {
+                  type: 'line',
+                  data: {
+                    labels: DATA.operation.volume.labels,
+                    datasets: [{
+                      label: 'Volume (KL)',
+                      data: DATA.operation.volume.data,
+                      borderColor: '#3b82f6',
+                      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                      borderWidth: 3,
+                      fill: true,
+                      tension: 0.4,
+                      pointRadius: 5,
+                      pointHoverRadius: 7
+                    }]
+                  },
+                  options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Volume (KL)' } } }
+                  }
+                });
+              },
+
+              initCommChart: () => {
+                Charts.destroyChart('commChart');
+                const ctx = document.getElementById('commChart').getContext('2d');
+                Charts.instances.commChart = new Chart(ctx, {
+                  type: 'bar',
+                  data: {
+                    labels: DATA.operation.commercialDays.labels,
+                    datasets: [
+                      { label: 'Freight Domestic', data: DATA.operation.commercialDays.freight, backgroundColor: '#10b981', borderRadius: 6 },
+                      { label: 'Charter Out', data: DATA.operation.commercialDays.charter, backgroundColor: '#f59e0b', borderRadius: 6 }
+                    ]
+                  },
+                  options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Days' } } }
+                  }
+                });
+              },
+
+              initDWTChart: () => {
+                Charts.destroyChart('dwtChart');
+                const ctx = document.getElementById('dwtChart').getContext('2d');
+                const dwtData = DATA.operation.dwtCharterOut;
+
+                Charts.instances.dwtChart = new Chart(ctx, {
+                  type: 'bar',
+                  data: {
+                    labels: ['KPI', 'Realisasi'],
+                    datasets: [
+                      {
+                        label: 'FSO Aberkha',
+                        data: [dwtData.kpi['FSO Aberkha'], dwtData.real['FSO Aberkha']],
+                        backgroundColor: '#1e3a8a',
+                        borderRadius: 6
+                      },
+                      {
+                        label: 'TST Fastron',
+                        data: [dwtData.kpi['TST Fastron'], dwtData.real['TST Fastron']],
+                        backgroundColor: '#f97316',
+                        borderRadius: 6
+                      },
+                      {
+                        label: 'STS Sengepti',
+                        data: [dwtData.kpi['STS Sengepti'], dwtData.real['STS Sengepti']],
+                        backgroundColor: '#10b981',
+                        borderRadius: 6
+                      },
+                      {
+                        label: 'STS Sanga',
+                        data: [dwtData.kpi['STS Sanga'], dwtData.real['STS Sanga']],
+                        backgroundColor: '#06b6d4',
+                        borderRadius: 6
+                      }
+                    ]
+                  },
+                  options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: { position: 'top' },
+                      tooltip: {
+                        callbacks: {
+                          label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()} DWT`
+                        }
+                      }
+                    },
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'DWT' },
+                        ticks: {
+                          callback: (value) => value.toLocaleString()
+                        }
+                      }
+                    }
+                  }
+                });
+              },
+
+              initFreightChart: () => {
+                Charts.destroyChart('freightChart');
+                const ctx = document.getElementById('freightChart').getContext('2d');
+                const freightData = DATA.operation.freightImportExport;
+
+                Charts.instances.freightChart = new Chart(ctx, {
+                  type: 'bar',
+                  data: {
+                    labels: freightData.labels,
+                    datasets: [
+                      {
+                        label: 'KPI',
+                        data: freightData.kpi,
+                        backgroundColor: '#1e3a8a',
+                        borderRadius: 6
+                      },
+                      {
+                        label: 'Realisasi',
+                        data: freightData.real,
+                        backgroundColor: '#f97316',
+                        borderRadius: 6
+                      }
+                    ]
+                  },
+                  options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: { position: 'top' },
+                      tooltip: {
+                        callbacks: {
+                          label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y} shipment`
+                        }
+                      }
+                    },
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Jumlah Shipment' },
+                        ticks: { stepSize: 1 }
+                      },
+                      x: {
+                        title: { display: true, text: 'Kuartal' }
+                      }
+                    }
+                  }
+                });
+              },
+
+              populateVesselTable: () => {
+                const tbody = document.getElementById('vesselTableBody');
+                tbody.innerHTML = '';
+                DATA.operation.vessels.forEach(vessel => {
+                  const row = tbody.insertRow();
+                  row.innerHTML = `
+        <td class="text-center">${vessel.no}</td>
+        <td class="font-semibold">${vessel.nama}</td>
+        <td>${vessel.cargo}</td>
+        <td>${vessel.tipe}</td>
+        <td class="text-center">${vessel.yob}</td>
+        <td>${vessel.kontrak}</td>
+        <td>${vessel.owner}</td>
+        <td>${vessel.shipMgmt}</td>
+        <td class="text-right font-medium">${vessel.unit}</td>
+        <td class="text-center font-bold text-blue-600">${vessel.shipment}</td>
+        <td>${vessel.loading}</td>
+        <td>${vessel.discharge}</td>
+        <td class="text-right">${vessel.commission}</td>
+        <td class="text-right">${vessel.commercial}</td>
       `;
-      tbody.appendChild(tr);
-    });
-  }
+                });
+              },
 
-  // ---------- Charts (Chart.js)
-  const charts = {};
-  function initCharts(){
-    // Collected vs Outstanding (horizontal stacked bar)
-    const ctxCol = document.getElementById('chartCollectedBar').getContext('2d');
-    charts.collectedBar = new Chart(ctxCol, {
-      type: 'bar',
-      data: {
-        labels: ['PnB'],
-        datasets: [
-          { label:'Collected', data: [PnB.Collected], backgroundColor:'#43cea2', borderRadius:6 },
-          { label:'Outstanding', data: [PnB.Outstanding], backgroundColor:'#185a9d', borderRadius:6 }
-        ]
-      },
-      options: {
-        indexAxis: 'y',
-        responsive:true,
-        maintainAspectRatio:false,
-        plugins:{ legend:{ position:'bottom' } },
-        scales: {
-          x: { ticks:{ callback: v => '$' + (v/1000000).toFixed(1) + 'M' }, stacked: true, grid:{ color:'#f1f5f9' } },
-          y: { stacked: true }
-        }
-      }
-    });
+              exportVesselCSV: () => {
+                const headers = ['No', 'Nama Kapal', 'Cargo', 'Tipe', 'YOB', 'Kontrak', 'Owner', 'Ship MGMT', 'Jumlah Unit', 'Jumlah Shipment', 'Loading Port', 'Discharge Port', 'Commission Days', 'Commercial Days'];
+                const rows = DATA.operation.vessels.map(v => [
+                  v.no, v.nama, v.cargo, v.tipe, v.yob, v.kontrak, v.owner, v.shipMgmt,
+                  v.unit, v.shipment, v.loading, v.discharge, v.commission, v.commercial
+                ]);
+                const csv = [headers, ...rows].map(r => r.map(cell => `"${cell}"`).join(',')).join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'Vessel_Operations_Sept2025.csv';
+                a.click();
+                URL.revokeObjectURL(url);
+              }
+            };
 
-    // Funnel doughnut
-    const ctxDough = document.getElementById('chartFunnelDoughnut').getContext('2d');
-    charts.funnelDough = new Chart(ctxDough, {
-      type: 'doughnut',
-      data: { labels:['Awarded','Failed','On Progress'], datasets:[{ data:[PnB.Awarded, PnB.Failed, PnB.OnProgress], backgroundColor:['#4ade80','#ef4444','#facc15'] }] },
-      options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } }
-    });
+            // UI HANDLERS
+            const UI = {
+              populatePLTable: () => {
+                const body = document.getElementById('plProductTableBody');
+                body.innerHTML = '';
+                DATA.plProducts.forEach(item => {
+                  const row = body.insertRow();
+                  row.insertCell().textContent = item.produk;
+                  const c1 = row.insertCell(); c1.textContent = item.revenue.toFixed(2); c1.classList.add('text-right');
+                  const c2 = row.insertCell(); c2.textContent = item.cost.toFixed(2); c2.classList.add('text-right');
+                  const c3 = row.insertCell(); c3.textContent = item.pl.toFixed(2); c3.classList.add('text-right', 'font-bold', item.pl >= 0 ? 'text-blue-600' : 'text-red-600');
+                });
+              },
 
-    // Funnel horizontal bar
-    const ctxFBar = document.getElementById('chartFunnelBar').getContext('2d');
-    charts.funnelBar = new Chart(ctxFBar, {
-      type: 'bar',
-      data: { labels:['Awarded','On Progress','Failed'], datasets:[{ data:[PnB.Awarded,PnB.OnProgress,PnB.Failed], backgroundColor:['#4ade80','#facc15','#ef4444'], borderRadius:8 }] },
-      options: { indexAxis:'y', plugins:{ legend:{ display:false } }, maintainAspectRatio:false, scales:{ x:{ display:false }, y:{ grid:{ display:false } } } }
-    });
+              switchTab: (tabId) => {
+                document.querySelectorAll('.tab-content').forEach(c => {
+                  c.classList.add('hidden');
+                  c.style.display = 'none';
+                });
+                document.querySelectorAll('#sidebarNav .tab-btn').forEach(btn => {
+                  btn.classList.remove('active', 'bg-gray-100', 'bg-gradient-to-r', 'from-[#001f3f]/80', 'to-[#b71c1c]/80', 'text-white');
+                  btn.classList.add('text-gray-700', 'hover:bg-gray-100');
+                });
 
-    // P/L chart (bar showing Real vs RKAP YTD)
-    const ctxPL = document.getElementById('plChart').getContext('2d');
-    const labelsPL = plData.map(x => x.produk);
-    charts.plChart = new Chart(ctxPL, {
-      type:'bar',
-      data:{
-        labels: labelsPL,
-        datasets:[
-          { label:'RKAP YTD Juli', data: plData.map(x=>x.RKAP_YTD_Juli), backgroundColor:'#93c5fd' },
-          { label:'Real YTD Juli', data: plData.map(x=>x.Real_YTD_Juli), backgroundColor:'#60a5fa' }
-        ]
-      },
-      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } }, scales:{ y:{ beginAtZero:true } } }
-    });
+                // Hide KPI section for non-commercial tabs
+                const kpiSection = document.getElementById('kpiSection');
+                if (tabId === 'operation' || tabId === 'market') {
+                  kpiSection.style.display = 'none';
+                } else {
+                  kpiSection.style.display = 'block';
+                }
 
-    // Revenue by product (pie)
-    const ctxRevByProd = document.getElementById('revByProd').getContext('2d');
-    charts.revByProd = new Chart(ctxRevByProd, {
-      type:'pie',
-      data:{
-        labels: labelsPL,
-        datasets:[{ data: plData.map(x => x.Real_YTD_Juli), backgroundColor: [
-          '#60a5fa','#34d399','#f59e0b','#fb7185','#a78bfa','#60a5fa','#f97316','#4ade80','#e11d48','#60a5fa','#7c3aed'
-        ] }]
-      },
-      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'right' } } }
-    });
+                const target = document.getElementById(`tab-${tabId}`);
+                if (target) {
+                  target.classList.remove('hidden');
+                  target.style.display = 'block';
+                }
 
-    // Commodity multi-line
-    const ctxCom = document.getElementById('chartCommodity').getContext('2d');
-    charts.commodity = new Chart(ctxCom, {
-      type:'line',
-      data: {
-        labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul'],
-        datasets: [
-          { label:'Paraxylene (USD/MT)', data:[60,58,59,61,60,62,61], borderColor:'#60a5fa', tension:0.3, fill:false },
-          { label:'Methanol (USD/MT)', data:[150,149,148,151,153,152,151], borderColor:'#34d399', tension:0.3, fill:false },
-          { label:'Asphalt (USD/MT)', data:[40,42,41,43,45,44,45], borderColor:'#f59e0b', tension:0.3, fill:false }
-        ]
-      },
-      options: { plugins:{ legend:{ labels:{ usePointStyle:true } } }, scales:{ y:{ grid:{ color:'#f1f5f9' } } } }
-    });
+                const activeBtn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+                if (activeBtn) {
+                  activeBtn.classList.add('active', 'bg-gray-100');
+                  activeBtn.classList.remove('text-gray-700', 'hover:bg-gray-100');
+                  if (tabId === 'pl' || tabId === 'salesfunnel') {
+                    const toggle = document.getElementById('commercialToggle');
+                    toggle.classList.add('active', 'bg-gradient-to-r', 'from-[#001f3f]/80', 'to-[#b71c1c]/80', 'text-white');
+                    toggle.classList.remove('bg-gray-100', 'text-gray-700', 'hover:bg-gray-100');
+                  }
+                }
 
-    // side sparkline
-    const ctxSpark = document.getElementById('sideSpark').getContext('2d');
-    charts.spark = new Chart(ctxSpark, {
-      type:'line',
-      data: { labels:['Jan','Feb','Mar','Apr','May','Jun','Jul'], datasets:[{ data:[2.8,3.2,3.4,3.7,4.0,4.3,4.66].map(x=>x*1000000), borderColor:'#b71c1c', tension:0.3, pointRadius:0, fill:true, backgroundColor:'rgba(183,28,28,0.06)'}] },
-      options:{ plugins:{ legend:{display:false} }, scales:{ x:{ display:false }, y:{ display:false } }, maintainAspectRatio:false }
-    });
+                // Initialize charts based on tab
+                if (tabId === 'pl') {
+                  setTimeout(() => {
+                    Charts.initPLSummary();
+                    Charts.initPLPerProduct();
+                    Charts.initCustomerPie();
+                  }, 100);
+                } else if (tabId === 'salesfunnel') {
+                  // Sales funnel doesn't need chart initialization
+                } else if (tabId === 'operation') {
+                  setTimeout(() => {
+                    Charts.initShipmentChart();
+                    Charts.initVolumeChart();
+                    Charts.initCommChart();
+                    Charts.initDWTChart();
+                    Charts.initFreightChart();
+                    Charts.populateVesselTable();
+                  }, 100);
+                }
+              },
 
-    // revenue trend (compact)
-    const ctxRev = document.getElementById('chartRevenueTrend').getContext('2d');
-    charts.revenueTrend = new Chart(ctxRev, {
-      type:'line',
-      data: { labels:['Jan','Feb','Mar','Apr','May','Jun','Jul'], datasets:[{ label:'Revenue', data:[2800000,3200000,3400000,3700000,4000000,4300000,4660000], borderColor:'#b71c1c', backgroundColor:'rgba(183,28,28,0.06)', fill:true, tension:0.36 }] },
-      options:{ plugins:{ legend:{display:false} }, scales:{ y:{ ticks:{ callback: v => '$' + (v/1000000).toFixed(1) + 'M' } }} }
-    });
+              exportPDF: () => {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+                doc.setFontSize(14);
+                doc.text('P/L Realisasi YTD Sept 2025 - Detail Produk', 40, 40);
+                const head = [['Produk', 'Revenue (M)', 'Cost (M)', 'P/L (M)']];
+                const body = DATA.plProducts.map(p => [p.produk, p.revenue.toFixed(2), p.cost.toFixed(2), p.pl.toFixed(2)]);
+                doc.autoTable({ startY: 70, head: head, body: body, styles: { fontSize: 10, cellPadding: 6 }, headStyles: { fillColor: [0, 31, 63] } });
+                doc.setFontSize(10);
+                doc.text(`RKAP Revenue YTD Sept 2025: ${DATA.plSummary.rkap[0]}M`, 40, doc.lastAutoTable.finalY + 30);
+                doc.text(`Realisasi Revenue YTD Sept 2025: ${DATA.plSummary.real[0]}M`, 40, doc.lastAutoTable.finalY + 46);
+                doc.save('PL_Detail_Products_Sept2025.pdf');
+              },
 
-    // fleet & util (unchanged)
-    const ctxFleet = document.getElementById('chartFleet').getContext('2d');
-    charts.fleet = new Chart(ctxFleet, {
-      type: 'bar',
-      data: { labels:['Owned/TC','Spot/COA','FSO/STS'], datasets:[{ data:[4,2,4], backgroundColor:['#43cea2','#f59e0b','#60a5fa'], borderRadius:8 }] },
-      options: { plugins:{ legend:{display:false} }, scales:{ y:{ beginAtZero:true, grid:{ color:'#f1f5f9' } } } }
-    });
+              exportCSV: () => {
+                const header = ['Produk', 'Revenue (M)', 'Cost (M)', 'P/L (M)'];
+                const rows = DATA.plProducts.map(p => [p.produk, p.revenue, p.cost, p.pl]);
+                const csv = [header, ...rows].map(r => r.join(',')).join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'PL_per_product_Sept2025.csv';
+                a.click();
+                URL.revokeObjectURL(url);
+              },
 
-    const ctxUtil = document.getElementById('chartUtil').getContext('2d');
-    const utilPercent = 88;
-    charts.util = new Chart(ctxUtil, {
-      type:'doughnut',
-      data: { labels:['Utilized','Idle'], datasets:[{ data:[utilPercent,100-utilPercent], backgroundColor:['#43cea2','#e6eef5'] }] },
-      options: { cutout:'70%', plugins:{ legend:{display:false} }, maintainAspectRatio:false }
-    });
+              toggleTable: () => {
+                const table = document.getElementById('detailPLTable');
+                const btn = document.getElementById('togglePLTable');
+                if (table.style.display === 'none') {
+                  table.style.display = 'block';
+                  btn.textContent = 'Hide Table';
+                } else {
+                  table.style.display = 'none';
+                  btn.textContent = 'Show Table';
+                }
+              },
 
-    // initial funnel counts -> reflect dataset
-    updateFunnelCounts();
-  }
+              updateKPIs: () => {
+                document.getElementById('cardRevenue').textContent = `${DATA.plSummary.real[0]}M`;
+                document.getElementById('cardCost').textContent = `${DATA.plSummary.real[1]}M`;
+                document.getElementById('cardPL').textContent = `${DATA.plSummary.real[2]}M`;
+                document.getElementById('profitValue').textContent = `${DATA.plSummary.real[2]}M`;
+                document.getElementById('revenueValue').textContent = `${DATA.plSummary.real[0]}M`;
+                document.getElementById('costValue').textContent = `${DATA.plSummary.real[1]}M`;
+                document.getElementById('plVsRkapValue').textContent = `${DATA.plSummary.plDeviation.toFixed(2)}%`;
+              }
+            };
 
-  function updateFunnelCounts(){
-    const awarded = SalesOpportunityData.filter(x=>String(x.Status).toLowerCase()==='awarded').length;
-    const failed = SalesOpportunityData.filter(x=>String(x.Status).toLowerCase()==='failed').length;
-    const onprog = SalesOpportunityData.length - awarded - failed;
-    if(charts.funnelDough){
-      charts.funnelDough.data.datasets[0].data = [awarded, failed, onprog];
-      charts.funnelDough.update();
-    }
-    if(charts.funnelBar){
-      charts.funnelBar.data.datasets[0].data = [awarded, onprog, failed];
-      charts.funnelBar.update();
-    }
-    $('awardedCount').innerText = awarded;
-    $('failedCount').innerText = failed;
-    $('onprogCount').innerText = onprog;
-  }
+            // EVENT LISTENERS
+            const initEventListeners = () => {
+              // Toggle submenu
+              const toggle = document.getElementById('commercialToggle');
+              const submenu = document.getElementById('commercialSubmenu');
+              const icon = toggle.querySelector('svg');
+              toggle.addEventListener('click', () => {
+                submenu.classList.toggle('hidden');
+                icon.classList.toggle('rotate-180');
+              });
 
-  // ---------- CSV Upload handling (kept pattern)
-  document.getElementById('fileInput').addEventListener('change', (e) => {
-    const f = e.target.files[0];
-    if(!f) return;
-    Papa.parse(f, { header:true, skipEmptyLines:true, complete: results => {
-      const rows = results.data.map((r, i) => ({
-        No: r.No || i+1,
-        Status: r.Status || '',
-        Vessel: r.Vessel || '',
-        Account: r.Account || '',
-        Cargo: r.Cargo || '',
-        Volume: r.Volume || '',
-        Freight: r.FreightRate || r.Freight || '',
-        Margin: r.Margin || ''
-      }));
-      SalesOpportunityData = rows;
-      // recalc counts
-      recalcFromOppData();
-      renderOpportunityTable();
-      updateFunnelCounts();
-      renderTopKPIs();
-      generateAISummary();
-      alert('CSV uploaded. Dashboard updated.');
-    }});
-  });
+              // Tab buttons
+              document.querySelectorAll('#sidebarNav .tab-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                  const tabId = e.currentTarget.getAttribute('data-tab');
+                  if (tabId) UI.switchTab(tabId);
+                });
+              });
 
-  // ---------- recalc summary from SalesOpportunityData
-  function recalcFromOppData(){
-    const counts = { total:0, Awarded:0, Failed:0, OnProgress:0 };
-    SalesOpportunityData.forEach(r=>{
-      counts.total++;
-      const s = (r.Status || '').trim();
-      if(s.toLowerCase() === 'awarded') counts.Awarded++;
-      else if(s.toLowerCase() === 'failed') counts.Failed++;
-      else if(s.toLowerCase().includes('progress') || s.toLowerCase().includes('on')) counts.OnProgress++;
-    });
-    PnB.TotalOpportunities = counts.total;
-    PnB.Awarded = counts.Awarded;
-    PnB.Failed = counts.Failed;
-    PnB.OnProgress = counts.OnProgress;
-    PnB.ConversionRate = counts.total ? Math.round((counts.Awarded / counts.total) * 100) : 0;
-  }
+              // Export buttons
+              document.getElementById('exportPLPdf').addEventListener('click', UI.exportPDF);
+              document.getElementById('exportPLCsv').addEventListener('click', UI.exportCSV);
+              document.getElementById('togglePLTable').addEventListener('click', UI.toggleTable);
+              document.getElementById('exportVesselTable').addEventListener('click', Charts.exportVesselCSV);
+            };
 
-  // ---------- Export P/L CSV & PDF
-  document.getElementById('exportPLCsv').addEventListener('click', ()=>{
-    const csv = Papa.unparse(plData.map(r=>({
-      Produk: r.produk, RKAP2025: r.RKAP2025, RKAP_YTD_Juli: r.RKAP_YTD_Juli, Real_YTD_Juli: r.Real_YTD_Juli, Delta_USD: r.Delta_USD, DeltaPct: r.DeltaPct, Status: r.status
-    })));
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'PL_Data_Juli2025.csv'; a.click(); URL.revokeObjectURL(url);
-  });
-
-  document.getElementById('exportPLPdf').addEventListener('click', ()=>{
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit:'pt', format:'a4' });
-    doc.setFontSize(14);
-    doc.text('P&L Segment Petrochemical & New Business — YTD Juli 2025', 40, 40);
-    const cols = ['Produk','RKAP 2025','RKAP YTD Juli','Real YTD Juli','Δ USD','Δ %','Status'];
-    const rows = plData.map(r => [r.produk, r.RKAP2025, r.RKAP_YTD_Juli, r.Real_YTD_Juli, r.Delta_USD, r.DeltaPct + '%', r.status]);
-    doc.autoTable({ head:[cols], body: rows, startY: 60, styles:{ fontSize:9 } });
-    doc.save('PL_Juli2025.pdf');
-  });
-
-  // ---------- Export Opportunities CSV (existing)
-  document.getElementById('btnExportCSV').addEventListener('click', () => {
-    if(!SalesOpportunityData.length){ alert('No data to export'); return; }
-    const csv = Papa.unparse(SalesOpportunityData);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'SalesOpportunityData.csv'; a.click();
-    URL.revokeObjectURL(url);
-  });
-
-  // ---------- Toggle PL table
-  document.getElementById('togglePLTable').addEventListener('click', ()=>{
-    const w = $('plTableWrap');
-    if(w.style.display === 'none'){ w.style.display = 'block'; } else { w.style.display = 'none'; }
-  });
-
-  // ---------- Voyage calculator (unchanged)
-  $('calcVoyageBtn').addEventListener('click', () => {
-    const rev = Number($('voyageRevenue').value) || 0;
-    const fuel = Number($('voyageFuel').value) || 0;
-    const port = Number($('voyagePort').value) || 0;
-    const totalCost = fuel + port;
-    const profit = rev - totalCost;
-    const margin = rev ? ((profit / rev) * 100).toFixed(2) : '0.00';
-    $('voyageResult').innerText = `Total Cost: ${fmtUSD(totalCost)} • Profit: ${fmtUSD(profit)} • Margin: ${margin}%`;
-  });
-  $('clearVoyageBtn').addEventListener('click', () => {
-    $('voyageRevenue').value=''; $('voyageFuel').value=''; $('voyagePort').value=''; $('voyageResult').innerText='';
-  });
-
-  // ---------- Tab switching (kept)
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'bg-gradient-to-r', 'from-[#001f3f]/80', 'to-[#b71c1c]/80', 'text-white'));
-      btn.classList.add('active', 'bg-gradient-to-r', 'from-[#001f3f]/80', 'to-[#b71c1c]/80', 'text-white');
-      const tab = btn.getAttribute('data-tab') || btn.dataset.tab;
-      document.querySelectorAll('.tab-content').forEach(tc => {
-        if(tc.dataset.tab === tab){
-          tc.classList.remove('hidden');
-          tc.style.display = 'block';
-          // animate
-          tc.style.opacity = 0;
-          tc.style.transform = 'translateX(8px)';
-          setTimeout(()=> { tc.style.opacity = 1; tc.style.transform = 'translateX(0)'; }, 10);
-        } else {
-          tc.classList.add('hidden');
-          tc.style.display = 'none';
-        }
-      });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-  });
-
-  function handleRealtimeMessage(msg){
-    if(!msg || !msg.type) return;
-    const p = msg.payload || {};
-    if(msg.type === 'kpi'){
-      ['TotalRevenue','Collected','Outstanding','CollectionRate','ConversionRate'].forEach(k => {
-        if(p[k] !== undefined) PnB[k] = p[k];
-      });
-      renderTopKPIs();
-    } else if(msg.type === 'opportunity'){
-      SalesOpportunityData.push(p);
-      recalcFromOppData();
-      renderOpportunityTable();
-      updateFunnelCounts();
-    } else if(msg.type === 'opportunity_bulk'){
-      if(Array.isArray(p)) SalesOpportunityData = p;
-      recalcFromOppData();
-      renderOpportunityTable();
-      updateFunnelCounts();
-    } else if(msg.type === 'market'){
-      if(p.summary) $('marketSnapshot').innerText = p.summary;
-    } else if(msg.type === 'voyage'){
-      $('voyageResult').innerText = 'Voyage update: ' + JSON.stringify(p);
-    }
-  }
-
-  // ---------- AI summary generator (simple)
-  function generateAISummary(){
-    const el = $('aiSummaryBox');
-    let s = `<strong>As of ${new Date().toLocaleString()}</strong>`;
-    s += `<p class="mt-2 text-sm text-gray-600">Total revenue (RKAP 2025): <strong>${fmtUSD(initialPnB.TotalRevenue)}</strong>. Collection rate: <strong>${initialPnB.CollectionRate}%</strong>.</p>`;
-    s += `<p class="mt-2 text-sm text-gray-600">Action: Fokus penagihan pada Paraxylene & Caustic Soda; evaluasi cost pada FAME & LBO; review Dry Bulk & Methanol exposure.</p>`;
-    el.innerHTML = s;
-  }
-
-  // ---------- Init on load
-  window.addEventListener('DOMContentLoaded', () => {
-    renderTopKPIs();
-    renderOpportunityTable();
-    renderPLTable();
-    generateAISummary();
-    initCharts();
-    recalcFromOppData();
-    updateFunnelCounts();
-  });
-
-  // ---------- Misc UI events
-  document.getElementById('refreshCommercial').addEventListener('click', () => {
-    recalcFromOppData();
-    renderOpportunityTable();
-    renderPLTable();
-    updateFunnelCounts();
-    generateAISummary();
-    alert('Commercial data refreshed.');
-  });
-
-  // Export Opportunities to PDF (button not originally requested but handy)
-  document.getElementById('btnExportCSV').addEventListener('dblclick', ()=>{
-    // dblclick for PDF (avoid accidental)
-    try {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ unit:'pt', format:'a4' });
-      doc.setFontSize(14);
-      doc.text('Sales Opportunities - PNB', 40, 40);
-      const cols = ['No','Status','Vessel','Account','Cargo','Volume','Freight','Margin'];
-      const rows = SalesOpportunityData.map(r => [r.No, r.Status, r.Vessel, r.Account, r.Cargo, r.Volume, r.Freight || r.FreightRate || '', r.Margin || '']);
-      doc.autoTable({ head:[cols], body: rows, startY:60, styles:{ fontSize:9 } });
-      doc.save('opportunities.pdf');
-    } catch(e){ console.warn('PDF export error', e); alert('PDF export failed'); }
-  });
-
-  </script>
+            // INITIALIZATION
+            document.addEventListener('DOMContentLoaded', () => {
+              UI.switchTab('pl');
+              UI.updateKPIs();
+              UI.populatePLTable();
+              initEventListeners();
+            });
+          </script>
 </body>
+
 </html>
